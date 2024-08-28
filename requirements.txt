@@ -1,0 +1,4 @@
+pyodk
+python-dotenv
+sqlite3
+flatdict

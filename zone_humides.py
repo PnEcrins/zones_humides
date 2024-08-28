@@ -241,8 +241,3 @@ for sub in subs:
         formated_sub["instanceID"],
         "approved"
     )
-
-
-    break
-
-

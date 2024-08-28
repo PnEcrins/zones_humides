@@ -1,20 +1,25 @@
 import json
-
+import toml
 import spatialite
 import flatdict
 
+from pathlib import Path
 
 from pyodk.client import Client
 
 
 client = Client("./config.toml")
-con = spatialite.connect("/home/theo/Documents/AMENAGEMENT/Acclimo/ODK-zones-humides/bdd/zone_humide.sqlite")
+config = toml.load("./config.toml")
+
+
+con = spatialite.connect(config["output"]["SQLITE_PATH"])
 cur = con.cursor()
 
 
 
-FORM_CODE = "ZONES_HUMIDES"
-PROJECT_ID = 5
+FORM_CODE = config["CENTRAL_ADDI"]["FORM_CODE"]
+PROJECT_ID = config["CENTRAL_ADDI"]["PROJECT_ID"]
+PHOTOS_ESPECE_PATH = Path(config["output"]["PHOTOS_ESPECE_PATH"])
 
 def get_attachment(project_id, form_id, uuid_sub, media_name, sub=None):
     response = client.get(
@@ -136,7 +141,12 @@ def update_review_state(project_id, form_id, submission_id, review_state):
 
 
 
-
+def save_photo(img, zh_name, photo_name):
+    output_path = (PHOTOS_ESPECE_PATH / zh_name)
+    if not output_path.exists():
+        output_path.mkdir(parents=True, exist_ok=True)
+    with open(str(output_path / photo_name), "wb") as f:
+        f.write(img)
 
 
 subs = get_submissions(PROJECT_ID, FORM_CODE)
@@ -194,6 +204,7 @@ for sub in subs:
     photos_esp = []
     for meta_photo in formated_sub.get("photos", []):
         img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], meta_photo["image_espece_indic"], formated_sub)
+        save_photo(img, sub["nom_zh"], meta_photo["image_espece_indic"])
         if img:
             photos_esp.append(img)
     
@@ -230,5 +241,8 @@ for sub in subs:
         formated_sub["instanceID"],
         "approved"
     )
+
+
+    break
 
 

@@ -1,3 +1,5 @@
 config.toml
 centralpy.log
 venv
+zip_dir
+csv_dir

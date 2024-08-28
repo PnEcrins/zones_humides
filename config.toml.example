@@ -1,0 +1,13 @@
+[central]
+base_url = "https://odk.net"
+username = ""
+password = ""
+default_project_id = 3
+
+[CENTRAL_ADDI]
+FORM_CODE = "ZONES_HUMIDES"
+PROJECT_ID = 5
+
+[output]
+SQLITE_PATH = "/home/zone_humide.sqlite"
+PHOTOS_ESPECE_PATH = "/home/bdd/photos_espece"

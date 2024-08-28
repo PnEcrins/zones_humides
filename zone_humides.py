@@ -3,6 +3,7 @@ import toml
 import spatialite
 import flatdict
 
+from datetime import datetime
 from pathlib import Path
 
 from pyodk.client import Client
@@ -140,13 +141,13 @@ def update_review_state(project_id, form_id, submission_id, review_state):
         print("Error while update submision state")
 
 
-
 def save_photo(img, zh_name, photo_name):
-    output_path = (PHOTOS_ESPECE_PATH / zh_name)
-    if not output_path.exists():
-        output_path.mkdir(parents=True, exist_ok=True)
-    with open(str(output_path / photo_name), "wb") as f:
-        f.write(img)
+    if img:
+        output_path = (PHOTOS_ESPECE_PATH / zh_name)
+        if not output_path.exists():
+            output_path.mkdir(parents=True, exist_ok=True)
+            with open(str(output_path / photo_name or str(datetime.now())), "wb") as f:
+                f.write(img)
 
 
 subs = get_submissions(PROJECT_ID, FORM_CODE)
@@ -203,8 +204,13 @@ for sub in subs:
 
     photos_esp = []
     for meta_photo in formated_sub.get("photos", []):
+        print(sub["nom_zh"])
         img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], meta_photo["image_espece_indic"], formated_sub)
-        save_photo(img, sub["nom_zh"], meta_photo["image_espece_indic"])
+        try:
+            save_photo(img, sub["nom_zh"], meta_photo["image_espece_indic"])
+        except Exception as e:
+            print(str(e))
+            print("Error while downloading photo")
         if img:
             photos_esp.append(img)
     

@@ -15,38 +15,39 @@ INSERT INTO taxref(cd_nom, lb_nom, nom_vern, lb_nom_nom_vern)
 SELECT * FROM taxref_save
 ORDER BY lb_nom ASC;
 
-ALTER TABLE zh DROP COLUMN espece_nitro;
 
 drop table cor_espece_indic_zh;
 
-create table cor_espece_indic_zh (
+
+CREATE TABLE cor_espece_indic_zh (
+"pk" INTEGER PRIMARY KEY AUTOINCREMENT, 
 "id_zh" integer NOT NULL,
 "cd_nom" integer NOT NULL,
-PRIMARY KEY (id_zh, cd_nom),
-FOREIGN KEY(id_zh) REFERENCES zh(pk),
-FOREIGN KEY(cd_nom) REFERENCES taxref(cd_nom)
+-- PRIMARY KEY (id_zh, cd_nom),
+FOREIGN KEY(id_zh) REFERENCES zh(pk) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY(cd_nom) REFERENCES taxref(cd_nom) ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
-
 
 drop table cor_espece_nitro_zh;
 
 create table cor_espece_nitro_zh (
+"pk" INTEGER PRIMARY KEY AUTOINCREMENT, 
 "id_zh" integer NOT NULL,
 "cd_nom" integer NOT NULL,
-PRIMARY KEY (id_zh, cd_nom),
-FOREIGN KEY(id_zh) REFERENCES zh(pk),
-FOREIGN KEY(cd_nom) REFERENCES taxref(cd_nom)
+FOREIGN KEY(id_zh) REFERENCES zh(pk) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY(cd_nom) REFERENCES taxref(cd_nom) ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
 
 drop table cor_espece_pietinement_zh;
 
 create table cor_espece_pietinement_zh (
+"pk" INTEGER PRIMARY KEY AUTOINCREMENT, 
 "id_zh" integer NOT NULL,
 "cd_nom" integer NOT NULL,
-PRIMARY KEY (id_zh, cd_nom),
-FOREIGN KEY(id_zh) REFERENCES zh(pk),
+FOREIGN KEY(id_zh) REFERENCES zh(pk) ON DELETE CASCADE,
 FOREIGN KEY(cd_nom) REFERENCES taxref(cd_nom)
 );
+
 
 
 -- cor_zh_photos_especes definition
@@ -91,29 +92,6 @@ CREATE TABLE "zh" (
 --- A executer dans QGIS
     SELECT RecoverGeometryColumn('zh', 'geom', 4326, 'POLYGON', 'XY');
 
-
-
--- CREATE TABLE "zh2" ("pk" INTEGER PRIMARY KEY AUTOINCREMENT,
--- "geom" POLYGON,
--- "nom_zh" TEXT,
--- "observateur" TEXT,
--- "critere_delimitation" JSONTEXT,
--- "typo_sdage" INTEGER,
--- "type_milieu" TEXT,
--- "pietinement" TEXT,
--- "source_pietinement" TEXT,
--- "autre_procesus_visible" JSONTEXTLIST,
--- "autre_procesus_visible_text" TEXT,
--- "pratique_gestion_eau" JSONTEXTLIST,
--- "localisation_pratique_gestion_eau" TEXT,
--- "pratique_agri_pasto" JSONTEXTLIST,
--- "localisation_pratique_agri_pasto" TEXT,
--- "pratique_travaux_foret" JSONTEXTLIST,
--- "localisation_pratique_travaux_foret" TEXT,
--- "pratique_loisirs" JSONTEXTLIST,
--- "localisation_pratique_loisirs" TEXT,
--- "image_zh" BLOB)
--- ;
 
 
 insert into nomenclatures (value, label, related_question) VALUES 

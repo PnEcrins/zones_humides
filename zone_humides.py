@@ -1,6 +1,6 @@
 import json
 import toml
-import spatialite
+import psycopg2
 import flatdict
 
 from datetime import datetime
@@ -13,13 +13,15 @@ client = Client("./config.toml")
 config = toml.load("./config.toml")
 
 
-con = spatialite.connect(config["output"]["SQLITE_PATH"])
+con = psycopg2.connect(
+    database=config["output"]["DATABASE_NAME"],
+    host=config["output"]["DATABASE_HOST"],
+    port=config["output"]["DATABASE_PORT"],
+    user=config["output"]["DATABASE_USER"],
+    password=config["output"]["DATABASE_PASS"]
+)
 cur = con.cursor()
 
-
-
-FORM_CODE = config["CENTRAL_ADDI"]["FORM_CODE"]
-PROJECT_ID = config["CENTRAL_ADDI"]["PROJECT_ID"]
 PHOTOS_ESPECE_PATH = Path(config["output"]["PHOTOS_ESPECE_PATH"])
 
 def get_attachment(project_id, form_id, uuid_sub, media_name, sub=None):
@@ -101,10 +103,10 @@ def flat_sub(sub):
 def insert_especes(table_name, list_espece):
     insert_especes = f"""
     INSERT INTO {table_name} (id_zh, cd_nom)
-    VALUES (:id_zh, :cd_nom)
+    VALUES (%(id_zh)s, %(cd_nom)s)
     """
 
-    cur.executemany(insert_especes, ({"id_zh": result[0], "cd_nom": cd_nom} for cd_nom in list_espece))
+    cur.executemany(insert_especes, ({"id_zh": result[0], "cd_nom": cd_nom} for cd_nom in list_espece if cd_nom != "aucune"))
 
 
 
@@ -119,7 +121,7 @@ def update_review_state(project_id, form_id, submission_id, review_state):
 
     :param review_state id : the value of the state for update
     :type form_id: str ("approved", "hasIssues", "rejected")
-    """
+    """"cd_nom"
     token = client.session.auth.service.get_token(
         username=client.config.central.username,
         password=client.config.central.password,
@@ -149,101 +151,121 @@ def save_photo(img, zh_name, photo_name):
             with open(str(output_path / photo_name or str(datetime.now())), "wb") as f:
                 f.write(img)
 
-
-subs = get_submissions(PROJECT_ID, FORM_CODE)
-
-
-fields = [
-    "date", "heure_debut", "nom_zh", "observateur", "critere_delimitation", "typo_sdage", "type_milieu", 
-    "pietinement", "source_pietinement", "autre_procesus_visible", "autre_procesus_visible_text", 
-    "pratique_gestion_eau", "localisation_pratique_gestion_eau", "pratique_agri_pasto", 
-    "localisation_pratique_agri_pasto", "pratique_travaux_foret", 
-    "localisation_pratique_travaux_foret", "pratique_loisirs", 
-    "localisation_pratique_loisirs", 
-    "image_zh"
-]
-
-insert_stmt = f"""
-INSERT INTO zh
-(
-    {",".join(fields)}
-    )
-VALUES({",".join(["?" for f in fields])});
-"""
-
-for sub in subs:
-    formated_sub = flat_sub(sub)
-    param = (formated_sub["nom_zh"],)
-    select_query = "SELECT * from zh where nom_zh = ? "
-    q = cur.execute(select_query, param)
-    value = [
-        formated_sub["date_de_debut_saisie"],
-        formated_sub["heure_de_debut_saisie"],
-        formated_sub["nom_zh"],
-        formated_sub["observateur"],
-        format_multiple(formated_sub["critere_delimitation"]),
-        formated_sub["typo_sdage"],
-        formated_sub["type_milieu"],
-        formated_sub["pietinement"],
-        format_multiple(formated_sub["source_pietinement"]),
-        format_multiple("autre_procesus_visible"),
-        formated_sub["autre_procesus_visible_text"],
-        format_multiple(formated_sub["pratique_gestion_eau"]),
-        formated_sub["localisation_pratique_gestion_eau"],
-        format_multiple(formated_sub["pratique_agri_pasto"]),
-        formated_sub["localisation_pratique_agri_pasto"],
-        format_multiple(formated_sub["pratique_travaux_foret"]),
-        formated_sub["localisation_pratique_travaux_foret"],
-        format_multiple(formated_sub["pratique_loisirs"]),
-        formated_sub["localisation_pratique_loisirs"],
-        get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], formated_sub["image_zh"], formated_sub)
-        ]
-    cur.execute(insert_stmt, value)
-    con.commit()
+################################################
+################### MAIN ########################
+#################################################
 
 
-    photos_esp = []
-    for meta_photo in formated_sub.get("photos", []):
-        print(sub["nom_zh"])
-        img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], meta_photo["image_espece_indic"], formated_sub)
+
+cur.execute("DELETE FROM zones_humides.zh_attr")
+
+
+for f in config["CENTRAL_ADDI"]["FORMS"]:
+    PROJECT_ID = f["PROJECT_ID"]
+    FORM_CODE = f["FORM_CODE"]
+    subs = get_submissions(PROJECT_ID, FORM_CODE)
+
+
+    fields = [
+        "date", "heure_debut", "nom_zh", "observateur", "critere_delimitation", "typo_sdage", "type_milieu", 
+        "pietinement", "source_pietinement", "autre_procesus_visible", "autre_procesus_visible_text", 
+        "pratique_gestion_eau", "localisation_pratique_gestion_eau", "pratique_agri_pasto", 
+        "localisation_pratique_agri_pasto", "pratique_travaux_foret", 
+        "localisation_pratique_travaux_foret", "pratique_loisirs", 
+        "localisation_pratique_loisirs", "uuid_sub"
+    ]
+
+    insert_stmt = f"""
+    INSERT INTO zones_humides.zh_attr
+    (
+        {",".join(fields)}
+        )
+    VALUES({",".join(["%s" for f in fields])});
+    """
+
+    for sub in subs:
         try:
-            save_photo(img, sub["nom_zh"], meta_photo["image_espece_indic"])
+            formated_sub = flat_sub(sub)
+            param = (formated_sub["nom_zh"],)
+            select_query = "SELECT * from zones_humides.zh_attr where nom_zh = %s "
+            q = cur.execute(select_query, param)
+            value = [
+                formated_sub["date_de_debut_saisie"],
+                formated_sub["heure_de_debut_saisie"],
+                formated_sub["nom_zh"],
+                formated_sub["observateur"],
+                format_multiple(formated_sub["critere_delimitation"]),
+                formated_sub["typo_sdage"],
+                formated_sub["type_milieu"],
+                formated_sub["pietinement"],
+                format_multiple(formated_sub["source_pietinement"]),
+                format_multiple("autre_procesus_visible"),
+                formated_sub["autre_procesus_visible_text"],
+                format_multiple(formated_sub["pratique_gestion_eau"]),
+                formated_sub["localisation_pratique_gestion_eau"],
+                format_multiple(formated_sub["pratique_agri_pasto"]),
+                formated_sub["localisation_pratique_agri_pasto"],
+                format_multiple(formated_sub["pratique_travaux_foret"]),
+                formated_sub["localisation_pratique_travaux_foret"],
+                format_multiple(formated_sub["pratique_loisirs"]),
+                formated_sub["localisation_pratique_loisirs"],
+                # get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], formated_sub["image_zh"], formated_sub)
+                formated_sub['__id']
+                ]
+            cur.execute(insert_stmt, value)
+            con.commit()
+
+
+            photos_esp = []
+            for meta_photo in formated_sub.get("photos", []):
+                img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], meta_photo["image_espece_indic"], formated_sub)
+                try:
+                    save_photo(img, sub["nom_zh"], meta_photo["image_espece_indic"])
+                except Exception as e:
+                    print(str(e))
+                    print("Error while downloading photo")
+                if img:
+                    photos_esp.append(img)
+            
+            select_query = "SELECT * from zones_humides.zh_attr where nom_zh = %s LIMIT 1"
+            cur.execute(select_query, param)
+            result = cur.fetchone()
+            if result and len(photos_esp) > 0:
+
+                insert_img = """
+                INSERT INTO zones_humides.cor_zh_photos_especes (fk_zh, photo)
+                VALUES (%(fk_zh)s,  %(photo)s)
+                """
+
+                cur.executemany(insert_img, ({"fk_zh": result[0], "photo": photo} for photo in photos_esp))
+            
+            espece_indic = format_espece(formated_sub, "espece_indicatrice", "autre_espece_indic")
+            espece_nitro = format_espece(formated_sub, "presence_espece_nitro", "autre_espece_eutrophisation")
+            espece_pietin = format_espece(formated_sub, "espece_indicatrice_pietinement", "autre_espece_pietinement")
+
+            if espece_indic:
+                insert_especes("zones_humides.cor_espece_indic_zh", espece_indic)
+
+            if espece_nitro:
+                insert_especes("zones_humides.cor_espece_nitro_zh", espece_nitro)
+
+            if espece_pietin:
+                insert_especes("zones_humides.cor_espece_pietinement_zh", espece_pietin)
+
+            con.commit()
+
+            update_review_state(
+                PROJECT_ID,
+                FORM_CODE,
+                formated_sub["instanceID"],
+                "approved"
+            )
         except Exception as e:
+            print("ERROR while synchronize data")
             print(str(e))
-            print("Error while downloading photo")
-        if img:
-            photos_esp.append(img)
-    
-    select_query = "SELECT * from zh where nom_zh = ? LIMIT 1"
-    q = cur.execute(select_query, param)
-    result = q.fetchone()
-    if result and len(photos_esp) > 0:
+            con.rollback()
 
-        insert_img = """
-        INSERT INTO cor_zh_photos_especes (fk_zh, photo)
-        VALUES (:fk_zh, :photo)
-        """
 
-        cur.executemany(insert_img, ({"fk_zh": result[0], "photo": photo} for photo in photos_esp))
-    
-    espece_indic = format_espece(formated_sub, "espece_indicatrice", "autre_espece_indic")
-    espece_nitro = format_espece(formated_sub, "presence_espece_nitro", "autre_espece_eutrophisation")
-    espece_pietin = format_espece(formated_sub, "espece_indicatrice_pietinement", "autre_espece_pietinement")
 
-    if espece_indic:
-        insert_especes("cor_espece_indic_zh", espece_indic)
-
-    if espece_nitro:
-        insert_especes("cor_espece_nitro_zh", espece_nitro)
-
-    if espece_pietin:
-        insert_especes("cor_espece_pietinement_zh", espece_pietin)
-
-    con.commit()
-
-    update_review_state(
-        PROJECT_ID,
-        FORM_CODE,
-        formated_sub["instanceID"],
-        "approved"
-    )
+cur.close()
+con.close()

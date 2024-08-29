@@ -1,26 +1,70 @@
 
 
+MDP zh_user : 4yUv5f2r7HAa6T
+
+set search_path = zones_humides;
+
+
+CREATE TABLE zh_attr (
+"pk" serial PRIMARY KEY,
+"date" date,
+"heure_debut" time,
+"nom_zh" TEXT,
+"observateur" TEXT,
+"critere_delimitation" TEXT,
+"typo_sdage" INTEGER,
+"type_milieu" TEXT,
+"pietinement" TEXT,
+"source_pietinement" TEXT,
+"autre_procesus_visible" TEXT,
+"autre_procesus_visible_text" TEXT,
+"pratique_gestion_eau" TEXT,
+"localisation_pratique_gestion_eau" TEXT,
+"pratique_agri_pasto" TEXT,
+"localisation_pratique_agri_pasto" TEXT,
+"pratique_travaux_foret" TEXT,
+"localisation_pratique_travaux_foret" TEXT,
+"pratique_loisirs" TEXT,
+"localisation_pratique_loisirs" TEXT,
+"image_zh" bytea
+);
+
+create table zh_geom(
+id serial primary key,
+geom geometry(Polygon, 4326),
+nom_zh text
+);
+
+
+
 -- On ne peut pas ordonné les relation dans QGIS
 -- on obligé de créer une PK "id" pour la table taxre et d'inserer dedans en ordonnant par lb_nom
 
-CREATE TABLE taxref(
-id integer PRIMARY KEY AUTOINCREMENT,
+
+CREATE TABLE zones_humides.taxref(
+id serial PRIMARY KEY ,set search_path = zones_humides;
+
 cd_nom integer UNIQUE,
 lb_nom text,
-nom_vern,
-lb_nom_nom_vern
+nom_vern text,
+lb_nom_nom_vern text
 );
 
-INSERT INTO taxref(cd_nom, lb_nom, nom_vern, lb_nom_nom_vern)
-SELECT * FROM taxref_save
+
+INSERT INTO zones_humides.taxref(cd_nom, lb_nom, nom_vern, lb_nom_nom_vern)
+SELECT t.cd_nom, lb_nom, nom_vern, concat(lb_nom, ' - ', nom_vern) 
+FROM taxonomie.taxref t
+join taxonomie.bib_noms b on b.cd_nom = t.cd_nom 
+join taxonomie.cor_nom_liste cor on cor.id_nom = b.id_nom and cor.id_liste = 1003
 ORDER BY lb_nom ASC;
+set search_path = zones_humides;
 
 
 drop table cor_espece_indic_zh;
 
 
 CREATE TABLE cor_espece_indic_zh (
-"pk" INTEGER PRIMARY KEY AUTOINCREMENT, 
+"pk" serial PRIMARY KEY, 
 "id_zh" integer NOT NULL,
 "cd_nom" integer NOT NULL,
 -- PRIMARY KEY (id_zh, cd_nom),
@@ -28,17 +72,14 @@ FOREIGN KEY(id_zh) REFERENCES zh(pk) ON DELETE CASCADE ON UPDATE CASCADE DEFERRA
 FOREIGN KEY(cd_nom) REFERENCES taxref(cd_nom) ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
 
-drop table cor_espece_nitro_zh;
 
 create table cor_espece_nitro_zh (
-"pk" INTEGER PRIMARY KEY AUTOINCREMENT, 
+"pk" serial PRIMARY KEY, 
 "id_zh" integer NOT NULL,
 "cd_nom" integer NOT NULL,
 FOREIGN KEY(id_zh) REFERENCES zh(pk) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY(cd_nom) REFERENCES taxref(cd_nom) ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
-
-drop table cor_espece_pietinement_zh;
 
 create table cor_espece_pietinement_zh (
 "pk" INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -51,8 +92,6 @@ FOREIGN KEY(cd_nom) REFERENCES taxref(cd_nom)
 
 
 -- cor_zh_photos_especes definition
-DROP TABLE "cor_zh_photos_especes";
-
 CREATE TABLE "cor_zh_photos_especes" (
 "pk" INTEGER PRIMARY KEY AUTOINCREMENT, 
 "fk_zh" INTEGER, 
@@ -63,36 +102,28 @@ FOREIGN KEY(fk_zh) REFERENCES zh(pk)
 
 -- zh definition
 
-CREATE TABLE "zh" (
-"pk" INTEGER PRIMARY KEY AUTOINCREMENT,
-"date" date,
-"heure_debut" time,
-"geom" POLYGON,
-"nom_zh" TEXT,
-"observateur" TEXT,
-"critere_delimitation" JSONTEXT,
-"typo_sdage" INTEGER,
-"type_milieu" TEXT,
-"pietinement" TEXT,
-"source_pietinement" TEXT,
-"autre_procesus_visible" JSONTEX,
-"autre_procesus_visible_text" TEXT,
-"pratique_gestion_eau" JSONTEX,
-"localisation_pratique_gestion_eau" TEXT,
-"pratique_agri_pasto" JSONTEXT,
-"localisation_pratique_agri_pasto" TEXT,
-"pratique_travaux_foret" JSONTEXT,
-"localisation_pratique_travaux_foret" TEXT,
-"pratique_loisirs" JSONTEXT,
-"localisation_pratique_loisirs" TEXT,
-"image_zh" BLOB
-);
+
 
 
 --- A executer dans QGIS
     SELECT RecoverGeometryColumn('zh', 'geom', 4326, 'POLYGON', 'XY');
 
 
+-- nomenclatures definition
+
+CREATE TABLE zones_humides.nomenclatures (
+id serial primary key,
+label text not null,
+value text not null,
+related_question text not null
+);
+
+
+
+insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
+('critere_delimitation','vegetation','Présence d''une végétation hygrophile'),
+('critere_delimitation','hydrologie', 'Hydrologie (balancement des eaux, crues, zones d''inondation, fluctuation de la nappe)');
+		
 
 insert into nomenclatures (value, label, related_question) VALUES 
 ('AL_alluvions','Alluvions (Végétation herbacée pionnière Des)', 'type_milieu'),
@@ -119,6 +150,13 @@ insert into nomenclatures (related_question, value, label) VALUES
 ('pietinement','03_45_4_plages_sol_nu_sup10','4 – Plages de sol nu >10 % de la surface'),
 ('pietinement','03_45_5_plages_sol_nu_sup50','5 – Plages de sol nu > 50 % de la surface');
 
+
+insert into nomenclatures (related_question, value, label) VALUES 
+('typo_sdage', '7_zones_humides_bas_fond', '7 – Zones humides de bas fonds en tête de bassin'),
+('typo_sdage', '10_marais_landes', '10 – Marais et landes humides de plateaux'),
+('typo_sdage', '11_zones_humides_ponctuelles', '11 – Zones humides ponctuelles'),
+('typo_sdage', '12_marais_amenage_but_agri_sylvi', '12 – Marais aménagés dans un but agricole ou sylvicole'),
+('typo_sdage', '13_zones_humides_artif', '13 – Zones humides artificielles')
 
 
 insert into nomenclatures (related_question, value, label) VALUES 
@@ -180,7 +218,7 @@ insert into nomenclatures (related_question, value, label) VALUES
 ('pratique_loisirs' , '07_61_baignade' , 'Baignade'),
 ('pratique_loisirs' , '07_61_proximite_sentier' , 'Proximité d’un sentier dans les 100 m'),
 ('pratique_loisirs' , '07_61_dechets' , 'Présence de déchets'),
-('pratique_loisirs' , '07_61_bivouac' , 'Bivouac'),
+('pratique_loisirs' , '07_61_bivouac' , 'Bivouac'),"cd_nom"
 ('pratique_loisirs' , '07_16_proximite_refuge' , 'Proximité d’un refuge dans l’espace de fonctionnalité'),
 ('pratique_loisirs' , '20_61_prelevement_eau_refuge' , 'Prélèvements d’eau pour le fonctionnement d’un refuge'),
 ('pratique_loisirs' , '05_62_chasse' , 'Chasse'),
@@ -189,3 +227,112 @@ insert into nomenclatures (related_question, value, label) VALUES
 ('pratique_loisirs' , '07_64_cueillette_et_ramassage' , 'Cueillette et ramassage'),
 ('pratique_loisirs' , '00_0_aucun' , 'Aucune');
 
+
+
+CREATE TABLE users (
+name text PRIMARY KEY,
+label text
+);
+
+
+
+
+
+
+
+
+
+
+
+--SAVE
+
+select t.cd_nom, lb_nom, nom_vern, concat(lb_nom, ' - ', nom_vern)
+from taxonomie.taxref t
+join taxonomie.bib_noms b on b.cd_nom = t.cd_nom 
+join taxonomie.cor_nom_liste c on c.id_nom = b.id_nom and c.id_liste = 500 or c.id_liste = 1003
+where t.regne = 'Plantae' and t.cd_nom = 994837;
+
+
+--Generer la liste de taxon pour ODK
+
+select distinct t.cd_nom as name,  concat(lb_nom, ' - ', nom_vern ) as label
+from taxonomie.taxref t
+join taxonomie.bib_noms b on b.cd_nom = t.cd_nom 
+join taxonomie.cor_nom_liste c on c.id_nom = b.id_nom and c.id_liste = 500 or c.id_liste = 1003
+where t.regne = 'Plantae';
+
+
+
+-- zones_humides.export_zh source
+
+CREATE OR REPLACE VIEW zones_humides.export_zh_attr
+AS WITH indic AS (
+         SELECT array_agg(t.lb_nom) AS especes,
+            cor_espece_indic_zh.id_zh
+           FROM zones_humides.cor_espece_indic_zh
+             JOIN taxonomie.taxref t ON t.cd_nom = cor_espece_indic_zh.cd_nom
+          GROUP BY cor_espece_indic_zh.id_zh
+        ), nitro AS (
+         SELECT array_agg(t.lb_nom) AS especes,
+            cor_espece_nitro_zh.id_zh
+           FROM zones_humides.cor_espece_nitro_zh
+             JOIN taxonomie.taxref t ON t.cd_nom = cor_espece_nitro_zh.cd_nom
+          GROUP BY cor_espece_nitro_zh.id_zh
+        ), pieti AS (
+         SELECT array_agg(t.lb_nom) AS especes,
+            cor_espece_pietinement_zh.id_zh
+           FROM zones_humides.cor_espece_pietinement_zh
+             JOIN taxonomie.taxref t ON t.cd_nom = cor_espece_pietinement_zh.cd_nom
+          GROUP BY cor_espece_pietinement_zh.id_zh
+        ), photo AS (
+         SELECT count(*) AS nb_photo, czpe.fk_zh
+           FROM zones_humides.cor_zh_photos_especes czpe 
+          GROUP BY czpe.fk_zh
+        )
+        
+ SELECT z.pk,
+    z.date AS heure_debut,
+    z.nom_zh,
+    z.observateur,
+    z.critere_delimitation,
+    z.typo_sdage,
+    z.type_milieu,
+    z.pietinement,
+    z.source_pietinement,
+    z.autre_procesus_visible,
+    z.autre_procesus_visible_text,
+    z.pratique_gestion_eau,
+    z.localisation_pratique_gestion_eau,
+    z.pratique_agri_pasto,
+    z.localisation_pratique_agri_pasto,
+    z.pratique_travaux_foret,
+    z.localisation_pratique_travaux_foret,
+    z.pratique_loisirs,
+    z.localisation_pratique_loisirs,
+    indic.especes AS espece_indic,
+    nitro.especes AS espece_nitro,
+    pieti.especes AS espece_pieti,
+    photo.nb_photo as nb_photo_espece
+   FROM zones_humides.zh_attr z
+     LEFT JOIN indic ON indic.id_zh = z.pk
+     LEFT JOIN nitro ON nitro.id_zh = z.pk
+     LEFT JOIN pieti ON pieti.id_zh = z.pk
+          LEFT JOIN photo ON photo.fk_zh = z.pk;
+
+
+
+
+
+grant SELECT ON taxonomie.taxref to zh_user;
+grant usage on schema taxonomie to zh_user;
+
+grant SELECT ON ALL TABLES IN SCHEMA zones_humides to zh_user;
+grant UPDATE ON ALL TABLES IN SCHEMA zones_humides to zh_user;
+grant DELETE ON ALL TABLES IN SCHEMA zones_humides to zh_user;
+grant INSERT ON ALL TABLES IN SCHEMA zones_humides to zh_user;
+
+
+grant SELECT ON ALL VIEWS IN SCHEMA zones_humides to zh_user;
+
+
+<script>document.write(expression.evaluate(" '<img width=500 src=' || '\"data:image/png;base64,' || to_base64(\"image_zh\") || '\">' "))</script>

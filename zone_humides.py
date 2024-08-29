@@ -257,12 +257,13 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
 
             con.commit()
 
-            update_review_state(
-                PROJECT_ID,
-                FORM_CODE,
-                formated_sub["instanceID"],
-                "approved"
-            )
+            # DO NOT UPDATE POUR LINSTANT !
+            # update_review_state(
+            #     PROJECT_ID,
+            #     FORM_CODE,
+            #     formated_sub["instanceID"],
+            #     "approved"
+            # )
         except Exception as e:
             print("ERROR while synchronize data")
             print(str(e))

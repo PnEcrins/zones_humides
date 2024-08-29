@@ -2,15 +2,17 @@ import json
 import toml
 import psycopg2
 import flatdict
-
+from pathlib import Path
 from datetime import datetime
 from pathlib import Path
 
 from pyodk.client import Client
 
 
-client = Client("./config.toml")
-config = toml.load("./config.toml")
+BASE_DIR = Path(__file__).resolve().parent
+
+client = Client(BASE_DIR / "config.toml")
+config = toml.load(BASE_DIR / "config.toml")
 
 
 con = psycopg2.connect(

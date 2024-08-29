@@ -215,17 +215,17 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
             cur.execute(insert_stmt, value)
             con.commit()
 
-            # TODO : dont save photo
-            # photos_esp = []
-            # for meta_photo in formated_sub.get("photos", []):
-            #     img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], meta_photo["image_espece_indic"], formated_sub)
-            #     try:
-            #         save_photo(img, sub["nom_zh"], meta_photo["image_espece_indic"])
-            #     except Exception as e:
-            #         print(str(e))
-            #         print("Error while downloading photo")
-            #     if img:
-            #         photos_esp.append(img)
+            photos_esp = []
+            for meta_photo in formated_sub.get("photos", []):
+                img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], meta_photo["image_espece_indic"], formated_sub)
+                # TODO : dont save photo
+                # try:
+                #     save_photo(img, sub["nom_zh"], meta_photo["image_espece_indic"])
+                # except Exception as e:
+                #     print(str(e))
+                #     print("Error while downloading photo")
+                if img:
+                    photos_esp.append(img)
             
             select_query = "SELECT * from zones_humides.zh_attr where nom_zh = %s LIMIT 1"
             cur.execute(select_query, param)

@@ -22,7 +22,7 @@ con = psycopg2.connect(
 )
 cur = con.cursor()
 
-PHOTOS_ESPECE_PATH = Path(config["output"]["PHOTOS_ESPECE_PATH"])
+# PHOTOS_ESPECE_PATH = Path(config["output"]["PHOTOS_ESPECE_PATH"])
 
 def get_attachment(project_id, form_id, uuid_sub, media_name, sub=None):
     response = client.get(

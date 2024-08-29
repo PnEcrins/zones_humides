@@ -237,7 +237,8 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
                 VALUES (%(fk_zh)s,  %(photo)s)
                 """
 
-                cur.executemany(insert_img, ({"fk_zh": result[0], "photo": photo} for photo in photos_esp))
+                #### ON INSERT PAS LES IMAGE POUR L'INSTANT
+                cur.executemany(insert_img, ({"fk_zh": result[0], "photo": None} for photo in photos_esp))
             
             espece_indic = format_espece(formated_sub, "espece_indicatrice", "autre_espece_indic")
             espece_nitro = format_espece(formated_sub, "presence_espece_nitro", "autre_espece_eutrophisation")

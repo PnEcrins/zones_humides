@@ -2,3 +2,4 @@ centralpy
 flatdict
 pyodk
 toml
+psycopg2

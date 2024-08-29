@@ -170,11 +170,11 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
 
     fields = [
         "date", "heure_debut", "nom_zh", "observateur", "critere_delimitation", "typo_sdage", "type_milieu", 
-        "pietinement", "source_pietinement", "autre_procesus_visible", "autre_procesus_visible_text", 
+        "pietinement", "source_pietinement", "autre_procesus_visible", "autre_procesus_visible_text", "espece_envahissante",
         "pratique_gestion_eau", "localisation_pratique_gestion_eau", "pratique_agri_pasto", 
         "localisation_pratique_agri_pasto", "pratique_travaux_foret", 
         "localisation_pratique_travaux_foret", "pratique_loisirs", 
-        "localisation_pratique_loisirs", "uuid_sub"
+        "localisation_pratique_loisirs", "uuid_sub",
     ]
 
     insert_stmt = f"""
@@ -203,6 +203,7 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
                 format_multiple(formated_sub["source_pietinement"]),
                 format_multiple("autre_procesus_visible"),
                 formated_sub["autre_procesus_visible_text"],
+                formated_sub.get("espece_envahissance", None),
                 format_multiple(formated_sub["pratique_gestion_eau"]),
                 formated_sub["localisation_pratique_gestion_eau"],
                 format_multiple(formated_sub["pratique_agri_pasto"]),

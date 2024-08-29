@@ -5,6 +5,8 @@ MDP zh_user : 4yUv5f2r7HAa6T
 set search_path = zones_humides;
 
 
+-- rajouter espece indicatrice
+
 CREATE TABLE zh_attr (
 "pk" serial PRIMARY KEY,
 "date" date,
@@ -18,6 +20,7 @@ CREATE TABLE zh_attr (
 "source_pietinement" TEXT,
 "autre_procesus_visible" TEXT,
 "autre_procesus_visible_text" TEXT,
+"espece_envahissante" integer
 "pratique_gestion_eau" TEXT,
 "localisation_pratique_gestion_eau" TEXT,
 "pratique_agri_pasto" TEXT,
@@ -26,7 +29,9 @@ CREATE TABLE zh_attr (
 "localisation_pratique_travaux_foret" TEXT,
 "pratique_loisirs" TEXT,
 "localisation_pratique_loisirs" TEXT,
-"image_zh" bytea
+"image_zh" bytea,
+FOREIGN KEY(espece_envahissante) REFERENCES taxonomie.taxref(cd_nom) ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED
+
 );
 
 create table zh_geom(
@@ -331,6 +336,7 @@ grant UPDATE ON ALL TABLES IN SCHEMA zones_humides to zh_user;
 grant DELETE ON ALL TABLES IN SCHEMA zones_humides to zh_user;
 grant INSERT ON ALL TABLES IN SCHEMA zones_humides to zh_user;
 
+grant references on taxonomie.taxref to zh_user;
 
 grant SELECT ON ALL VIEWS IN SCHEMA zones_humides to zh_user;
 

@@ -4,7 +4,9 @@ MDP zh_user : 4yUv5f2r7HAa6T
 
 set search_path = zones_humides;
 
-
+grant SELECT ON taxonomie.taxref to zh_user;
+grant usage on schema taxonomie to zh_user;
+grant references on taxonomie.taxref to zh_user;
 -- rajouter espece indicatrice
 
 CREATE TABLE zh_attr (
@@ -304,6 +306,7 @@ AS WITH indic AS (
     z.type_milieu,
     z.pietinement,
     z.source_pietinement,
+    t.lb_nom as espece_envahissante,
     z.autre_procesus_visible,
     z.autre_procesus_visible_text,
     z.pratique_gestion_eau,
@@ -319,6 +322,7 @@ AS WITH indic AS (
     pieti.especes AS espece_pieti,
     photo.nb_photo as nb_photo_espece
    FROM zones_humides.zh_attr z
+    left join taxonomie.taxref t on t.cd_nom = z.espece_envahissante
      LEFT JOIN indic ON indic.id_zh = z.pk
      LEFT JOIN nitro ON nitro.id_zh = z.pk
      LEFT JOIN pieti ON pieti.id_zh = z.pk
@@ -328,15 +332,16 @@ AS WITH indic AS (
 
 
 
-grant SELECT ON taxonomie.taxref to zh_user;
-grant usage on schema taxonomie to zh_user;
 
+grant usage ON SCHEMA zones_humides TO zh_user;
 grant SELECT ON ALL TABLES IN SCHEMA zones_humides to zh_user;
 grant UPDATE ON ALL TABLES IN SCHEMA zones_humides to zh_user;
 grant DELETE ON ALL TABLES IN SCHEMA zones_humides to zh_user;
 grant INSERT ON ALL TABLES IN SCHEMA zones_humides to zh_user;
 
-grant references on taxonomie.taxref to zh_user;
+GRANT SELECT
+ON ALL SEQUENCES IN SCHEMA zones_humides
+    TO zh_user;
 
 grant SELECT ON ALL VIEWS IN SCHEMA zones_humides to zh_user;
 

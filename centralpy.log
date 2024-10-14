@@ -1,6 +1,6 @@
-2024-07-03 13:55:40,480 - centralpy.cli.v0.6.1 - INFO - CSV pull initiated: URL https://odk.cevennes-parcnational.net/, project 5, form_id ECRINS_FREQUENTATION_2024
+2024-07-03 13:55:40,480 - centralpy.cli.v0.6.1 - INFO - CSV pull initiated: URL https://odk.net/, project 5, form_id ECRINS_FREQUENTATION_2024
 2024-07-03 13:55:40,828 - centralpy.client - INFO - Successfully authenticated and obtained session token
 2024-07-03 13:55:41,091 - centralpy.use_cases.pull_csv_zip - INFO - CSV zip download complete for form_id ECRINS_FREQUENTATION_2024. Attachments included: True
 2024-07-03 13:55:41,092 - centralpy.use_cases.pull_csv_zip - INFO - Zip saved to zip_dir/ECRINS_FREQUENTATION_2024-2024-07-03T11-55-41.zip
 2024-07-03 13:55:41,095 - centralpy.use_cases.pull_csv_zip - INFO - Into directory csv_dir, CSV data file saved: "ECRINS_FREQUENTATION_2024.csv"
-2024-07-03 13:55:41,097 - centralpy.cli.v0.6.1 - INFO - CSV pull completed: URL https://odk.cevennes-parcnational.net/, project 5, form_id ECRINS_FREQUENTATION_2024
+2024-07-03 13:55:41,097 - centralpy.cli.v0.6.1 - INFO - CSV pull completed: URL https://odk.net/, project 5, form_id ECRINS_FREQUENTATION_2024

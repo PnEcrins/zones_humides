@@ -1,6 +1,5 @@
 
 
-MDP zh_user : 4yUv5f2r7HAa6T
 
 set search_path = zones_humides;
 
@@ -9,34 +8,33 @@ grant usage on schema taxonomie to zh_user;
 grant references on taxonomie.taxref to zh_user;
 -- rajouter espece indicatrice
 
-CREATE TABLE zh_attr (
-"pk" serial PRIMARY KEY,
-"date" date,
-"heure_debut" time,
-"nom_zh" TEXT,
-"observateur" TEXT,
-"critere_delimitation" TEXT,
-"typo_sdage" INTEGER,
-"type_milieu" TEXT,
-"pietinement" TEXT,
-"source_pietinement" TEXT,
-"autre_procesus_visible" TEXT,
-"autre_procesus_visible_text" TEXT,
-"espece_envahissante" integer
-"pratique_gestion_eau" TEXT,
-"localisation_pratique_gestion_eau" TEXT,
-"pratique_agri_pasto" TEXT,
-"localisation_pratique_agri_pasto" TEXT,
-"pratique_travaux_foret" TEXT,
-"localisation_pratique_travaux_foret" TEXT,
-"pratique_loisirs" TEXT,
-"localisation_pratique_loisirs" TEXT,
-"image_zh" bytea,
-FOREIGN KEY(espece_envahissante) REFERENCES taxonomie.taxref(cd_nom) ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED
-
+CREATE TABLE zones_humides.zh_attr (
+	pk serial PRIMARY KEY,
+	"date" date NULL,
+	heure_debut time NULL,
+	nom_zh text NULL,
+	observateur text NULL,
+	critere_delimitation text NULL,
+	typo_sdage text NULL,
+	type_milieu text NULL,
+	pietinement text NULL,
+	source_pietinement text NULL,
+	autre_procesus_visible text NULL,
+	autre_procesus_visible_text text NULL,
+	pratique_gestion_eau text NULL,
+	localisation_pratique_gestion_eau text NULL,
+	pratique_agri_pasto text NULL,
+	localisation_pratique_agri_pasto text NULL,
+	pratique_travaux_foret text NULL,
+	localisation_pratique_travaux_foret text NULL,
+	pratique_loisirs text NULL,
+	localisation_pratique_loisirs text NULL,
+	uuid_sub text NULL,
+	espece_envahissante int4 NULL,
+	CONSTRAINT fk_zh_attr_espece_envahissante FOREIGN KEY (espece_envahissante) REFERENCES taxonomie.taxref(cd_nom)
 );
 
-create table zh_geom(
+create table zones_humides.zh_geom(
 id serial primary key,
 geom geometry(Polygon, 4326),
 nom_zh text
@@ -48,62 +46,63 @@ nom_zh text
 -- on obligé de créer une PK "id" pour la table taxre et d'inserer dedans en ordonnant par lb_nom
 
 
-CREATE TABLE zones_humides.taxref(
-id serial PRIMARY KEY ,set search_path = zones_humides;
+-- CREATE TABLE zones_humides.taxref(
+-- id serial PRIMARY KEY ,set search_path = zones_humides;
 
-cd_nom integer UNIQUE,
-lb_nom text,
-nom_vern text,
-lb_nom_nom_vern text
-);
-
-
-INSERT INTO zones_humides.taxref(cd_nom, lb_nom, nom_vern, lb_nom_nom_vern)
-SELECT t.cd_nom, lb_nom, nom_vern, concat(lb_nom, ' - ', nom_vern) 
-FROM taxonomie.taxref t
-join taxonomie.bib_noms b on b.cd_nom = t.cd_nom 
-join taxonomie.cor_nom_liste cor on cor.id_nom = b.id_nom and cor.id_liste = 1003
-ORDER BY lb_nom ASC;
-set search_path = zones_humides;
+-- cd_nom integer UNIQUE,
+-- lb_nom text,
+-- nom_vern text,
+-- lb_nom_nom_vern text
+-- );
 
 
-drop table cor_espece_indic_zh;
+-- INSERT INTO zones_humides.taxref(cd_nom, lb_nom, nom_vern, lb_nom_nom_vern)
+-- SELECT t.cd_nom, lb_nom, nom_vern, concat(lb_nom, ' - ', nom_vern) 
+-- FROM taxonomie.taxref t
+-- join taxonomie.bib_noms b on b.cd_nom = t.cd_nom 
+-- join taxonomie.cor_nom_liste cor on cor.id_nom = b.id_nom and cor.id_liste = 1003
+-- ORDER BY lb_nom ASC;
+-- set search_path = zones_humides;
 
 
-CREATE TABLE cor_espece_indic_zh (
+drop table zones_humides.cor_espece_indic_zh;
+
+
+CREATE TABLE zones_humides.cor_espece_indic_zh (
 "pk" serial PRIMARY KEY, 
 "id_zh" integer NOT NULL,
 "cd_nom" integer NOT NULL,
 -- PRIMARY KEY (id_zh, cd_nom),
-FOREIGN KEY(id_zh) REFERENCES zh(pk) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED,
-FOREIGN KEY(cd_nom) REFERENCES taxref(cd_nom) ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED
+FOREIGN KEY(id_zh) REFERENCES zones_humides.zh_attr(pk) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY(cd_nom) REFERENCES taxonomie.taxref(cd_nom) ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
 
 
-create table cor_espece_nitro_zh (
+create table zones_humides.cor_espece_nitro_zh (
 "pk" serial PRIMARY KEY, 
 "id_zh" integer NOT NULL,
 "cd_nom" integer NOT NULL,
-FOREIGN KEY(id_zh) REFERENCES zh(pk) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED,
-FOREIGN KEY(cd_nom) REFERENCES taxref(cd_nom) ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED
+FOREIGN KEY(id_zh) REFERENCES zones_humides.zh_attr(pk) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY(cd_nom) REFERENCES taxonomie.taxref(cd_nom) ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
 
-create table cor_espece_pietinement_zh (
-"pk" INTEGER PRIMARY KEY AUTOINCREMENT, 
+create table zones_humides.cor_espece_pietinement_zh (
+"pk" serial PRIMARY KEY, 
 "id_zh" integer NOT NULL,
 "cd_nom" integer NOT NULL,
-FOREIGN KEY(id_zh) REFERENCES zh(pk) ON DELETE CASCADE,
-FOREIGN KEY(cd_nom) REFERENCES taxref(cd_nom)
+FOREIGN KEY(id_zh) REFERENCES zones_humides.zh_attr(pk) ON DELETE CASCADE,
+FOREIGN KEY(cd_nom) REFERENCES taxonomie.taxref(cd_nom)
 );
+
 
 
 
 -- cor_zh_photos_especes definition
-CREATE TABLE "cor_zh_photos_especes" (
-"pk" INTEGER PRIMARY KEY AUTOINCREMENT, 
+CREATE TABLE zones_humides.cor_zh_photos_especes (
+"pk" serial PRIMARY KEY, 
 "fk_zh" INTEGER, 
-"photo" BLOB,
-FOREIGN KEY(fk_zh) REFERENCES zh(pk)
+"photo" bytea,
+FOREIGN KEY(fk_zh) REFERENCES zones_humides.zh_attr(pk)
 );
 
 
@@ -132,7 +131,7 @@ insert into zones_humides.nomenclatures (related_question, value, label) VALUES
 ('critere_delimitation','hydrologie', 'Hydrologie (balancement des eaux, crues, zones d''inondation, fluctuation de la nappe)');
 		
 
-insert into nomenclatures (value, label, related_question) VALUES 
+insert into zones_humides.nomenclatures (value, label, related_question) VALUES 
 ('AL_alluvions','Alluvions (Végétation herbacée pionnière Des)', 'type_milieu'),
 ('BM_bas_marais','Bas-marais et marais de transition', 'type_milieu'),
 ('BCH_boisement_coniferes_hum','Boisement de conifères humide', 'type_milieu'),
@@ -149,7 +148,7 @@ insert into nomenclatures (value, label, related_question) VALUES
 
 
 
-insert into nomenclatures (related_question, value, label) VALUES 
+insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
 ('pietinement','03_45_0_pas_de_paturage' ,'0 – Pas de pâturage, ni traces de fréquentation : pas de crottes observées, ni traces de pas'),
 ('pietinement','03_45_1_passage_rapide','1 – Trace de passage rapide (crottes et/ou pas)'),
 ('pietinement','03_45_2_passage_frequent','2 – Traces de passages plus fréquents et dispersés sans création de sol nu'),
@@ -158,7 +157,7 @@ insert into nomenclatures (related_question, value, label) VALUES
 ('pietinement','03_45_5_plages_sol_nu_sup50','5 – Plages de sol nu > 50 % de la surface');
 
 
-insert into nomenclatures (related_question, value, label) VALUES 
+insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
 ('typo_sdage', '7_zones_humides_bas_fond', '7 – Zones humides de bas fonds en tête de bassin'),
 ('typo_sdage', '10_marais_landes', '10 – Marais et landes humides de plateaux'),
 ('typo_sdage', '11_zones_humides_ponctuelles', '11 – Zones humides ponctuelles'),
@@ -166,7 +165,7 @@ insert into nomenclatures (related_question, value, label) VALUES
 ('typo_sdage', '13_zones_humides_artif', '13 – Zones humides artificielles')
 
 
-insert into nomenclatures (related_question, value, label) VALUES 
+insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
 ('source_pietinement', '1_animal_sauvage', 'Animale sauvage'),
 ('source_pietinement', '2_animal_domestique', 'Animale domestique'),
 ('source_pietinement', '3_humaine', 'Humaine'),
@@ -174,7 +173,7 @@ insert into nomenclatures (related_question, value, label) VALUES
 
 
 
-insert into nomenclatures (related_question, value, label) VALUES 
+insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
 ('autre_procesus_visible', '81_imp_erosion_naturelle', 'Érosion naturelle'),
 ('autre_procesus_visible', '82_imp_atterissement_evasement_assechement', 'Atterrissement, envasement, assèchement'),
 ('autre_procesus_visible', '94_imp_envahissement_esepece', 'Envahissement d''une espèce'),
@@ -183,7 +182,7 @@ insert into nomenclatures (related_question, value, label) VALUES
 ('autre_procesus_visible', '00_0_aucun', 'Aucun');
 
 
-insert into nomenclatures (related_question, value, label) VALUES 
+insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
 ('pratique_gestion_eau', '21_31_comblement_assechement_drainage', 'Comblement, assèchement, drainage des zones humides'),
 ('pratique_gestion_eau', '21_32_retenue_collinaire', 'Création de retenues collinaires'),
 ('pratique_gestion_eau', '17_36_hydroelectricite', 'Activité hydroélectrique (microcentrales et autres)'),
@@ -191,7 +190,7 @@ insert into nomenclatures (related_question, value, label) VALUES
 ('pratique_gestion_eau', '21_37_action_vegetation_immergee', 'Action sur la végétation immergée, flottante ou amphibie, y compris faucardage et démottage'),
 ('pratique_gestion_eau', '00_0_aucun', 'Aucune');
 
-insert into nomenclatures (related_question, value, label) VALUES 
+insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
 ('localisation_pratique' , '1_au_niveau_zh' , '1 - au niveau de la zone humide'),
 ('localisation_pratique' , '2_au_niveau_espace_fonctionnalite' , '2 – au niveau de l''espace de fonctionnalité'),
 ('localisation_pratique' , '3_au_niveau_zh_et_espace_fonctionnalite' , '3 – au niveau de la zone humide et de l''espace de fonctionnalité'),
@@ -346,4 +345,4 @@ ON ALL SEQUENCES IN SCHEMA zones_humides
 grant SELECT ON ALL VIEWS IN SCHEMA zones_humides to zh_user;
 
 
-<script>document.write(expression.evaluate(" '<img width=500 src=' || '\"data:image/png;base64,' || to_base64(\"image_zh\") || '\">' "))</script>
+-- <script>document.write(expression.evaluate(" '<img width=500 src=' || '\"data:image/png;base64,' || to_base64(\"image_zh\") || '\">' "))</script>

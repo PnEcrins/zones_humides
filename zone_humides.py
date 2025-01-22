@@ -90,7 +90,7 @@ def get_submissions(project_id, form_id):
             form_id=form_id,
             project_id=project_id,
             expand="*",
-            # filter="__system/reviewState ne 'approved' and __system/reviewState ne 'hasIssues' and __system/reviewState ne 'rejected'",
+            filter="__system/reviewState ne 'hasIssues' and __system/reviewState ne 'rejected'",
         )
         return form_data["value"]
     
@@ -184,7 +184,6 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
         )
     VALUES({",".join(["%s" for f in fields])});
     """
-
     for sub in subs:
         try:
             formated_sub = flat_sub(sub)
@@ -241,7 +240,7 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
                 """
 
                 #### ON INSERT PAS LES IMAGE POUR L'INSTANT
-                cur.executemany(insert_img, ({"fk_zh": result[0], "photo": None} for photo in photos_esp))
+                #cur.executemany(insert_img, ({"fk_zh": result[0], "photo": None} for photo in photos_esp))
             
             espece_indic = format_espece(formated_sub, "espece_indicatrice", "autre_espece_indic")
             espece_nitro = format_espece(formated_sub, "presence_espece_nitro", "autre_espece_eutrophisation")

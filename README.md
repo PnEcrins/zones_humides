@@ -1,2 +1,3 @@
 # zones_humides
-Scripts de rappatriement de l'inventaire des ZH de ODK-central à une base PostgreSQL
+
+Scripts de rapatriement de l'inventaire des ZH de ODK-central vers une base de données PostgreSQL

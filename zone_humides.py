@@ -149,7 +149,7 @@ def update_review_state(project_id, form_id, submission_id, review_state):
 
 
 def save_photo(img, sub):
-    file_name = sub["nom_zh"] + "_" + sub["__id"]
+    file_name = sub["nom_zh"] + "_" + sub["__id"]+".jpg"
     with open(str(media_path / file_name), "wb") as f:
         f.write(img)
 

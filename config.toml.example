@@ -15,4 +15,4 @@ default_project_id = 3
 
 [output]
 SQLITE_PATH = "/home/zone_humide.sqlite"
-PHOTOS_ESPECE_PATH = "/home/bdd/photos_espece"
+EXPORT_PHOTO_PATH = "/home/theo/Documents/tmp/ZH"

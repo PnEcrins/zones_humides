@@ -24,9 +24,11 @@ con = psycopg2.connect(
 )
 cur = con.cursor()
 
-# PHOTOS_ESPECE_PATH = Path(config["output"]["PHOTOS_ESPECE_PATH"])
+media_path = Path(config["output"]["EXPORT_PHOTO_PATH"])
+if not media_path.exists():
+    media_path.mkdir(parents=True)
 
-def get_attachment(project_id, form_id, uuid_sub, media_name, sub=None):
+def get_attachment(project_id, form_id, uuid_sub, media_name):
     response = client.get(
         f"projects/{project_id}/forms/{form_id}/submissions/{uuid_sub}/attachments/{media_name}"
     )
@@ -95,12 +97,13 @@ def get_submissions(project_id, form_id):
         return form_data["value"]
     
 def flat_sub(sub):
+    geom = sub.get("geom_zh")
     val = flatdict.FlatDict(sub, delimiter=".")
     output_dict = {}
     for key, val in val.items():
         path = key.split(".")
         output_dict[path[len(path) - 1]] = val
-    return output_dict
+    return geom, output_dict
 
 def insert_especes(table_name, list_espece):
     insert_especes = f"""
@@ -145,21 +148,25 @@ def update_review_state(project_id, form_id, submission_id, review_state):
         print("Error while update submision state")
 
 
-def save_photo(img, zh_name, photo_name):
-    if img:
-        output_path = (PHOTOS_ESPECE_PATH / zh_name)
-        if not output_path.exists():
-            output_path.mkdir(parents=True, exist_ok=True)
-            with open(str(output_path / photo_name or str(datetime.now())), "wb") as f:
-                f.write(img)
+def save_photo(img, sub):
+    file_name = sub["nom_zh"] + "_" + sub["__id"]
+    with open(str(media_path / file_name), "wb") as f:
+        f.write(img)
+
+
+def get_addi_fields_list():
+    """ 
+    return a list of dict like {"field_name" : <LABEL_FIELDS>", "field_id" :"<ID_FIELD>"}
+    """
+    cur.execute("select pk, nom_champ from zones_humides.bib_champs")
+    fields = cur.fetchall()
+    return [{"field_name": f[1], "field_id": f[0]} for f in fields]
 
 ################################################
 ################### MAIN ########################
 #################################################
 
-
-
-cur.execute("DELETE FROM zones_humides.zh_attr")
+cur.execute("DELETE FROM zones_humides.zh")
 
 
 for f in config["CENTRAL_ADDI"]["FORMS"]:
@@ -168,106 +175,93 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
     subs = get_submissions(PROJECT_ID, FORM_CODE)
 
 
+
     fields = [
-        "date", "heure_debut", "nom_zh", "observateur", "critere_delimitation", "typo_sdage", "type_milieu", 
-        "pietinement", "source_pietinement", "autre_procesus_visible", "autre_procesus_visible_text", "espece_envahissante",
-        "pratique_gestion_eau", "localisation_pratique_gestion_eau", "pratique_agri_pasto", 
-        "localisation_pratique_agri_pasto", "pratique_travaux_foret", 
-        "localisation_pratique_travaux_foret", "pratique_loisirs", 
+        "date", "heure_debut", "nom_zh", "geom", "observateur", "typo_sdage", "type_milieu", 
+        "pietinement", "autre_procesus_visible_text", "espece_envahissante",
+        "localisation_pratique_gestion_eau", 
+        "localisation_pratique_agri_pasto", 
+        "localisation_pratique_travaux_foret", 
         "localisation_pratique_loisirs", "uuid_sub",
     ]
 
     insert_stmt = f"""
-    INSERT INTO zones_humides.zh_attr
+    INSERT INTO zones_humides.zh
     (
         {",".join(fields)}
         )
     VALUES({",".join(["%s" for f in fields])});
     """
+
+    addi_field_list = get_addi_fields_list()
     for sub in subs:
-        try:
-            formated_sub = flat_sub(sub)
-            param = (formated_sub["nom_zh"],)
-            select_query = "SELECT * from zones_humides.zh_attr where nom_zh = %s "
-            q = cur.execute(select_query, param)
-            value = [
-                formated_sub["date_de_debut_saisie"],
-                formated_sub["heure_de_debut_saisie"],
-                formated_sub["nom_zh"],
-                formated_sub["observateur"],
-                format_multiple(formated_sub["critere_delimitation"]),
-                formated_sub["typo_sdage"],
-                formated_sub["type_milieu"],
-                formated_sub["pietinement"],
-                format_multiple(formated_sub["source_pietinement"]),
-                format_multiple("autre_procesus_visible"),
-                formated_sub["autre_procesus_visible_text"],
-                formated_sub.get("espece_envahissance", None),
-                format_multiple(formated_sub["pratique_gestion_eau"]),
-                formated_sub["localisation_pratique_gestion_eau"],
-                format_multiple(formated_sub["pratique_agri_pasto"]),
-                formated_sub["localisation_pratique_agri_pasto"],
-                format_multiple(formated_sub["pratique_travaux_foret"]),
-                formated_sub["localisation_pratique_travaux_foret"],
-                format_multiple(formated_sub["pratique_loisirs"]),
-                formated_sub["localisation_pratique_loisirs"],
-                # get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], formated_sub["image_zh"], formated_sub)
-                formated_sub['__id']
-                ]
-            cur.execute(insert_stmt, value)
-            con.commit()
+        geom, formated_sub = flat_sub(sub)
 
-            photos_esp = []
-            for meta_photo in formated_sub.get("photos", []):
-                img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], meta_photo["image_espece_indic"], formated_sub)
-                # TODO : dont save photo
-                # try:
-                #     save_photo(img, sub["nom_zh"], meta_photo["image_espece_indic"])
-                # except Exception as e:
-                #     print(str(e))
-                #     print("Error while downloading photo")
-                if img:
-                    photos_esp.append(img)
-            
-            select_query = "SELECT * from zones_humides.zh_attr where nom_zh = %s LIMIT 1"
-            cur.execute(select_query, param)
-            result = cur.fetchone()
-            if result and len(photos_esp) > 0:
+        binary_geom = None
+        # calculate geom
+        if geom:
+            query_geom = "select ST_Force2D(ST_GeomFromGeoJSON(%s))"
+            cur.execute(query_geom, [json.dumps(geom)])
+            tuple_result = cur.fetchone()
+            if tuple_result:
+                binary_geom = tuple_result[0]
 
-                insert_img = """
-                INSERT INTO zones_humides.cor_zh_photos_especes (fk_zh, photo)
-                VALUES (%(fk_zh)s,  %(photo)s)
-                """
+        value = [
+            formated_sub["date_de_debut_saisie"],
+            formated_sub["heure_de_debut_saisie"],
+            formated_sub["nom_zh"],
+            binary_geom,
+            formated_sub["observateur"],
+            formated_sub["typo_sdage"],
+            formated_sub["type_milieu"],
+            formated_sub["pietinement"],
+            formated_sub["autre_procesus_visible_text"],
+            formated_sub.get("espece_envahissance", None),
+            formated_sub["localisation_pratique_gestion_eau"],
+            formated_sub["localisation_pratique_agri_pasto"],
+            formated_sub["localisation_pratique_travaux_foret"],
+            formated_sub["localisation_pratique_loisirs"],
+            # get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], formated_sub["image_zh"], formated_sub)
+            formated_sub['__id']
+            ]
+        cur.execute(insert_stmt, value)
+        con.commit()
 
-                #### ON INSERT PAS LES IMAGE POUR L'INSTANT
-                #cur.executemany(insert_img, ({"fk_zh": result[0], "photo": None} for photo in photos_esp))
-            
-            espece_indic = format_espece(formated_sub, "espece_indicatrice", "autre_espece_indic")
-            espece_nitro = format_espece(formated_sub, "presence_espece_nitro", "autre_espece_eutrophisation")
-            espece_pietin = format_espece(formated_sub, "espece_indicatrice_pietinement", "autre_espece_pietinement")
+        img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], formated_sub["image_zh"])
+        save_photo(img, formated_sub)
 
-            if espece_indic:
-                insert_especes("zones_humides.cor_espece_indic_zh", espece_indic)
+        inserted_id_zh = None
+        select_query = "SELECT pk from zones_humides.zh where uuid_sub = %s"
+        cur.execute(select_query, [formated_sub['__id']])
+        result = cur.fetchone()
+        if result:
+            inserted_id_zh = result[0]
 
-            if espece_nitro:
-                insert_especes("zones_humides.cor_espece_nitro_zh", espece_nitro)
+        espece_indic = format_espece(formated_sub, "espece_indicatrice", "autre_espece_indic")
+        espece_nitro = format_espece(formated_sub, "presence_espece_nitro", "autre_espece_eutrophisation")
+        espece_pietin = format_espece(formated_sub, "espece_indicatrice_pietinement", "autre_espece_pietinement")
 
-            if espece_pietin:
-                insert_especes("zones_humides.cor_espece_pietinement_zh", espece_pietin)
+        if espece_indic:
+            insert_especes("zones_humides.cor_espece_indic_zh", espece_indic)
 
-            con.commit()
+        if espece_nitro:
+            insert_especes("zones_humides.cor_espece_nitro_zh", espece_nitro)
 
-            # DO NOT UPDATE POUR LINSTANT !
-            # update_review_state(
-            #     PROJECT_ID,
-            #     FORM_CODE,
-            #     formated_sub["instanceID"],
-            #     "approved"
-            # )
-        except Exception as e:
-            print("ERROR while synchronize data")
-            print(str(e))
-            con.rollback()
+        if espece_pietin:
+            insert_especes("zones_humides.cor_espece_pietinement_zh", espece_pietin)
+
+
+        # insert in cor_champs_addi
+        for field in addi_field_list:
+            if formated_sub[field["field_name"]]:
+                for val in formated_sub[field["field_name"]].split(" "):
+                    query = """
+                    INSERT INTO zones_humides.cor_champs_addi (id_zh, id_type_champ, label)
+                    VALUES (%s, %s, %s)
+                        """
+                    cur.execute(query, [inserted_id_zh, field["field_id"], val])
+
+        con.commit()
 
 
 

@@ -150,8 +150,9 @@ def update_review_state(project_id, form_id, submission_id, review_state):
 
 def save_photo(img, sub):
     file_name = sub["nom_zh"] + "_" + sub["__id"]+".jpg"
-    with open(str(media_path / file_name), "wb") as f:
-        f.write(img)
+    if not (media_path / file_name).exists():
+        with open(str(media_path / file_name), "wb") as f:
+            f.write(img)
 
 
 def get_addi_fields_list():
@@ -228,7 +229,8 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
         con.commit()
 
         img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], formated_sub["image_zh"])
-        save_photo(img, formated_sub)
+        if img:
+            save_photo(img, formated_sub)
 
         inserted_id_zh = None
         select_query = "SELECT pk from zones_humides.zh where uuid_sub = %s"

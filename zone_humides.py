@@ -148,10 +148,9 @@ def update_review_state(project_id, form_id, submission_id, review_state):
         print("Error while update submision state")
 
 
-def save_photo(img, sub):
-    file_name = sub["nom_zh"] + "_" + sub["__id"]+".jpg"
-    if not (media_path / file_name).exists():
-        with open(str(media_path / file_name), "wb") as f:
+def save_photo(img, file_path: Path):
+    if not file_path.exists():
+        with open(str(file_path), "wb") as f:
             f.write(img)
 
 
@@ -174,8 +173,6 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
     PROJECT_ID = f["PROJECT_ID"]
     FORM_CODE = f["FORM_CODE"]
     subs = get_submissions(PROJECT_ID, FORM_CODE)
-
-
 
     fields = [
         "date", "heure_debut", "nom_zh", "geom", "observateur", "typo_sdage", "type_milieu", 
@@ -230,7 +227,8 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
 
         img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], formated_sub["image_zh"])
         if img:
-            save_photo(img, formated_sub)
+            file_path = media_path / str(sub["nom_zh"] + "_" + sub["__id"]+".jpg")
+            save_photo(img, file_path)
 
         inserted_id_zh = None
         select_query = "SELECT pk from zones_humides.zh where uuid_sub = %s"
@@ -264,6 +262,19 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
                     cur.execute(query, [inserted_id_zh, field["field_id"], val])
 
         con.commit()
+
+
+        for meta_photo in formated_sub.get("photos", []):
+            img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], meta_photo["image_espece_indic"])
+            if img:
+                try:
+                    media_path_espece = media_path / "especes"
+                    file_path = media_path_espece / str(sub["nom_zh"]+"_"+meta_photo["__id"]+".jpg")
+                    save_photo(img, file_path)
+                except Exception as e:
+                    print(str(e))
+                    print("Error while downloading photo")
+
 
 
 

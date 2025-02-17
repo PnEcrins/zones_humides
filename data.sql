@@ -9,106 +9,82 @@ VALUES
 ('pratique_loisirs')
 ;
 
-insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
-('critere_delimitation','vegetation','Présence d''une végétation hygrophile'),
-('critere_delimitation','hydrologie', 'Hydrologie (balancement des eaux, crues, zones d''inondation, fluctuation de la nappe)');
-		
 
-insert into zones_humides.nomenclatures (value, label, related_question) VALUES 
-('AL_alluvions','Alluvions (Végétation herbacée pionnière Des)', 'type_milieu'),
-('BM_bas_marais','Bas-marais et marais de transition', 'type_milieu'),
-('BCH_boisement_coniferes_hum','Boisement de conifères humide', 'type_milieu'),
-('BFH_boisement_feuillu_humide','Boisement feuillu humide', 'type_milieu'),
-('EC_bordure_eaux_courantes','Bordure d’eaux courantes (Végétation amphibie des)', 'type_milieu'),
-('FU_fourré_humide','Fourré humide', 'type_milieu'),
-('GH_grands_helophytes','Grands hélophytes (Communauté de)', 'type_milieu'),
-('MC_magnocariçaie','Magnocariçaie', 'type_milieu'),
-('MG_mégaphorbiaie','Mégaphorbiaie', 'type_milieu'),
-('RB_petit_helophytes','Petits hélophytes (Communauté de )', 'type_milieu'),
-('PH_prairie_humide','Prairie humide (et pelouse humide)', 'type_milieu'),
-('AQ_vegetation_aqua','Végétation aquatique', 'type_milieu'),
-('FO_vegetation_fontinale','Végétation fontinale (sources, mouillères)', 'type_milieu');
-
-
-
-insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
-('pietinement','03_45_0_pas_de_paturage' ,'0 – Pas de pâturage, ni traces de fréquentation : pas de crottes observées, ni traces de pas'),
-('pietinement','03_45_1_passage_rapide','1 – Trace de passage rapide (crottes et/ou pas)'),
-('pietinement','03_45_2_passage_frequent','2 – Traces de passages plus fréquents et dispersés sans création de sol nu'),
-('pietinement','03_45_3_plages_sol_nu_localisees','3 – Plages de sol nu localisées'),
-('pietinement','03_45_4_plages_sol_nu_sup10','4 – Plages de sol nu >10 % de la surface'),
-('pietinement','03_45_5_plages_sol_nu_sup50','5 – Plages de sol nu > 50 % de la surface');
-
-
-insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
-('typo_sdage', '7_zones_humides_bas_fond', '7 – Zones humides de bas fonds en tête de bassin'),
-('typo_sdage', '10_marais_landes', '10 – Marais et landes humides de plateaux'),
-('typo_sdage', '11_zones_humides_ponctuelles', '11 – Zones humides ponctuelles'),
-('typo_sdage', '12_marais_amenage_but_agri_sylvi', '12 – Marais aménagés dans un but agricole ou sylvicole'),
-('typo_sdage', '13_zones_humides_artif', '13 – Zones humides artificielles');
-
-
-insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
-('source_pietinement', '1_animal_sauvage', 'Animale sauvage'),
-('source_pietinement', '2_animal_domestique', 'Animale domestique'),
-('source_pietinement', '3_humaine', 'Humaine'),
-('source_pietinement', '4_ne_sait_pas', 'Ne sait pas');
-
-
-
-insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
-('autre_procesus_visible', '81_imp_erosion_naturelle', 'Érosion naturelle'),
-('autre_procesus_visible', '82_imp_atterissement_evasement_assechement', 'Atterrissement, envasement, assèchement'),
-('autre_procesus_visible', '94_imp_envahissement_esepece', 'Envahissement d''une espèce'),
-('autre_procesus_visible', '21_84_mouvement_terrain', 'Mouvement de terrain'),
-('autre_procesus_visible', 'autre', 'Autre'),
-('autre_procesus_visible', '00_0_aucun', 'Aucun');
-
-
-insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
-('pratique_gestion_eau', '21_31_comblement_assechement_drainage', 'Comblement, assèchement, drainage des zones humides'),
-('pratique_gestion_eau', '21_32_retenue_collinaire', 'Création de retenues collinaires'),
-('pratique_gestion_eau', '17_36_hydroelectricite', 'Activité hydroélectrique (microcentrales et autres)'),
-('pratique_gestion_eau', '21_36_modification_fonctionnement_hydraulique', 'Modification du fonctionnement hydraulique'),
-('pratique_gestion_eau', '21_37_action_vegetation_immergee', 'Action sur la végétation immergée, flottante ou amphibie, y compris faucardage et démottage'),
-('pratique_gestion_eau', '00_0_aucun', 'Aucune');
-
-insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
-('localisation_pratique' , '1_au_niveau_zh' , '1 - au niveau de la zone humide'),
-('localisation_pratique' , '2_au_niveau_espace_fonctionnalite' , '2 – au niveau de l''espace de fonctionnalité'),
-('localisation_pratique' , '3_au_niveau_zh_et_espace_fonctionnalite' , '3 – au niveau de la zone humide et de l''espace de fonctionnalité'),
-('localisation_pratique' , 'non_determinee' , 'Non déterminée');
-
-
-
-insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
-('pratique_agri_pasto' , '01_42_debroussaillage_suppression_haies_et_bosquets' , 'Débroussaillage, suppression haies et bosquets, remembrement et travaux connexes'),
-('pratique_agri_pasto' , '20_45_captage_eau_abreuvement' , 'Prélèvements d’eau pour l’abreuvement (captage et prise d’eau)'),
-('pratique_agri_pasto' , '20_45_abreuvement_troupeau_zh' , 'Abreuvement du troupeau dans la zone humide'),
-('pratique_agri_pasto' , '03_46_suppression_ou_entretien_vegetation_fauchage_fenaison' , 'Suppression ou entretien de la végétation fauchage et fenaison'),
-('pratique_agri_pasto' , '03_17_infrastructure_pastorale' , 'Infrastructure pastorale (cabane d’alpage, parc de tri…)'),
-('pratique_agri_pasto' , '03_13_piste_pastorale' , 'Création de pistes pastorales'),
-('pratique_agri_pasto' , '03_47_abandon_syst_pastoraux' , 'Abandon de systèmes pastoraux'),
-('pratique_agri_pasto' , '00_0_aucun' , 'Aucune');
-
-
-insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
-('pratique_travaux_foret' , '02_51_coupe' , 'Coupes, abattages, arrachages et déboisements'),
-('pratique_travaux_foret' , '02_52_taille_elagage' , 'Taille, élagage'),
-('pratique_travaux_foret' , '02_53_plantations' , 'Plantations'),
-('pratique_travaux_foret' , '02_55_piste_forestiere' , 'Création de traînes et pistes forestières'),
-('pratique_travaux_foret' , '00_0_aucun' , 'Aucune');
-
-
-insert into zones_humides.nomenclatures (related_question, value, label) VALUES 
-('pratique_loisirs' , '07_61_baignade' , 'Baignade'),
-('pratique_loisirs' , '07_61_proximite_sentier' , 'Proximité d’un sentier dans les 100 m'),
-('pratique_loisirs' , '07_61_dechets' , 'Présence de déchets'),
-('pratique_loisirs' , '07_61_bivouac' , 'Bivouac'),
-('pratique_loisirs' , '07_16_proximite_refuge' , 'Proximité d’un refuge dans l’espace de fonctionnalité'),
-('pratique_loisirs' , '20_61_prelevement_eau_refuge' , 'Prélèvements d’eau pour le fonctionnement d’un refuge'),
-('pratique_loisirs' , '05_62_chasse' , 'Chasse'),
-('pratique_loisirs' , '04_63_pêche' , 'Pêche'),
-('pratique_loisirs' , '04_63_alevinage' , 'Alevinage'),
-('pratique_loisirs' , '07_64_cueillette_et_ramassage' , 'Cueillette et ramassage'),
-('pratique_loisirs' , '00_0_aucun' , 'Aucune');
+INSERT INTO zones_humides.nomenclatures ("label",value,related_question,cd_nomenclature_coresp,code_activite_hum,code_impact) VALUES
+	 ('Alluvions (Végétation herbacée pionnière Des)','AL_alluvions','type_milieu',NULL,NULL,NULL),
+	 ('Bas-marais et marais de transition','BM_bas_marais','type_milieu',NULL,NULL,NULL),
+	 ('Boisement de conifères humide','BCH_boisement_coniferes_hum','type_milieu',NULL,NULL,NULL),
+	 ('Boisement feuillu humide','BFH_boisement_feuillu_humide','type_milieu',NULL,NULL,NULL),
+	 ('Bordure d’eaux courantes (Végétation amphibie des)','EC_bordure_eaux_courantes','type_milieu',NULL,NULL,NULL),
+	 ('Fourré humide','FU_fourré_humide','type_milieu',NULL,NULL,NULL),
+	 ('Grands hélophytes (Communauté de)','GH_grands_helophytes','type_milieu',NULL,NULL,NULL),
+	 ('Magnocariçaie','MC_magnocariçaie','type_milieu',NULL,NULL,NULL),
+	 ('Mégaphorbiaie','MG_mégaphorbiaie','type_milieu',NULL,NULL,NULL),
+	 ('Petits hélophytes (Communauté de )','RB_petit_helophytes','type_milieu',NULL,NULL,NULL);
+INSERT INTO zones_humides.nomenclatures ("label",value,related_question,cd_nomenclature_coresp,code_activite_hum,code_impact) VALUES
+	 ('Prairie humide (et pelouse humide)','PH_prairie_humide','type_milieu',NULL,NULL,NULL),
+	 ('Végétation aquatique','AQ_vegetation_aqua','type_milieu',NULL,NULL,NULL),
+	 ('Végétation fontinale (sources, mouillères)','FO_vegetation_fontinale','type_milieu',NULL,NULL,NULL),
+	 ('Animale sauvage','1_animal_sauvage','source_pietinement',NULL,NULL,NULL),
+	 ('Ne sait pas','4_ne_sait_pas','source_pietinement',NULL,NULL,NULL),
+	 ('Aucune','00_0_aucun','pratique_gestion_eau',NULL,NULL,NULL),
+	 ('Hydrologie (balancement des eaux, crues, zones d''inondation, fluctuation de la nappe)','hydrologie','critere_delimitation','4',NULL,NULL),
+	 ('10 – Marais et landes humides de plateaux','10_marais_landes','typo_sdage','10',NULL,NULL),
+	 ('11 – Zones humides ponctuelles','11_zones_humides_ponctuelles','typo_sdage','11',NULL,NULL),
+	 ('12 – Marais aménagés dans un but agricole ou sylvicole','12_marais_amenage_but_agri_sylvi','typo_sdage','12',NULL,NULL);
+INSERT INTO zones_humides.nomenclatures ("label",value,related_question,cd_nomenclature_coresp,code_activite_hum,code_impact) VALUES
+	 ('13 – Zones humides artificielles','13_zones_humides_artif','typo_sdage','13',NULL,NULL),
+	 ('1 – Trace de passage rapide (crottes et/ou pas)','03_45_1_passage_rapide','pietinement',NULL,'3','45.0'),
+	 ('2 – Traces de passages plus fréquents et dispersés sans création de sol nu','03_45_2_passage_frequent','pietinement',NULL,'3','45.0'),
+	 ('3 – Plages de sol nu localisées','03_45_3_plages_sol_nu_localisees','pietinement',NULL,'3','45.0'),
+	 ('4 – Plages de sol nu >10 % de la surface','03_45_4_plages_sol_nu_sup10','pietinement',NULL,'3','45.0'),
+	 ('5 – Plages de sol nu > 50 % de la surface','03_45_5_plages_sol_nu_sup50','pietinement',NULL,'3','45.0'),
+	 ('7 – Zones humides de bas fonds en tête de bassin','7_zones_humides_bas_fond','typo_sdage','7',NULL,NULL),
+	 ('Prélèvements d’eau pour l’abreuvement (captage et prise d’eau)','20_45_captage_eau_abreuvement','pratique_agri_pasto',NULL,'20','45.0'),
+	 ('Non déterminée','non_determinee','localisation_pratique','0',NULL,NULL),
+	 ('Abreuvement du troupeau dans la zone humide','20_45_abreuvement_troupeau_zh','pratique_agri_pasto',NULL,'20','45.0');
+INSERT INTO zones_humides.nomenclatures ("label",value,related_question,cd_nomenclature_coresp,code_activite_hum,code_impact) VALUES
+	 ('0 – Pas de pâturage, ni traces de fréquentation : pas de crottes observées, ni traces de pas','03_45_0_pas_de_paturage','pietinement',NULL,NULL,NULL),
+	 ('Aucun','00_0_aucun','autre_procesus_visible',NULL,NULL,''),
+	 ('Non déterminée','non_determinee','localisation_pratique','0',NULL,NULL),
+	 ('1 - au niveau de la zone humide','1_au_niveau_zh','localisation_pratique','1',NULL,NULL),
+	 ('2 – au niveau de l''espace de fonctionnalité','2_au_niveau_espace_fonctionnalite','localisation_pratique','2',NULL,NULL),
+	 ('3 – au niveau de la zone humide et de l''espace de fonctionnalité','3_au_niveau_zh_et_espace_fonctionnalite','localisation_pratique','3',NULL,NULL),
+	 ('Comblement, assèchement, drainage des zones humides','21_31_comblement_assechement_drainage','pratique_gestion_eau',NULL,'21','31.0'),
+	 ('Création de retenues collinaires','21_32_retenue_collinaire','pratique_gestion_eau',NULL,'21','32.0'),
+	 ('Activité hydroélectrique (microcentrales et autres)','17_36_hydroelectricite','pratique_gestion_eau',NULL,'17','36.0'),
+	 ('Modification du fonctionnement hydraulique','21_36_modification_fonctionnement_hydraulique','pratique_gestion_eau',NULL,'21','36.0'),
+	 ('Action sur la végétation immergée, flottante ou amphibie, y compris faucardage et démottage','21_37_action_vegetation_immergee','pratique_gestion_eau',NULL,'21','37.0');
+INSERT INTO zones_humides.nomenclatures ("label",value,related_question,cd_nomenclature_coresp,code_activite_hum,code_impact) VALUES
+	 ('Débroussaillage, suppression haies et bosquets, remembrement et travaux connexes','01_42_debroussaillage_suppression_haies_et_bosquets','pratique_agri_pasto',NULL,'01','42.0'),
+	 ('Atterrissement, envasement, assèchement','82_imp_atterissement_evasement_assechement','autre_procesus_visible',NULL,'21','82'),
+	 ('Autre','autre','autre_procesus_visible',NULL,NULL,NULL),
+	 ('Érosion naturelle','81_imp_erosion_naturelle','autre_procesus_visible',NULL,'21','81'),
+	 ('Envahissement d''une espèce','94_imp_envahissement_esepece','autre_procesus_visible',NULL,'21','91'),
+	 ('Mouvement de terrain','21_84_mouvement_terrain','autre_procesus_visible',NULL,'21','84'),
+	 ('Animale domestique','2_animal_domestique','source_pietinement',NULL,'3','45.0'),
+	 ('Humaine','3_humaine','source_pietinement',NULL,'7','24.0'),
+	 ('Aucune','00_0_aucun','pratique_agri_pasto',NULL,NULL,NULL),
+	 ('Aucune','00_0_aucun','pratique_travaux_foret',NULL,NULL,NULL);
+INSERT INTO zones_humides.nomenclatures ("label",value,related_question,cd_nomenclature_coresp,code_activite_hum,code_impact) VALUES
+	 ('Aucune','00_0_aucun','pratique_loisirs',NULL,NULL,NULL),
+	 ('Présence d''une végétation hygrophile','vegetation','critere_delimitation','1',NULL,NULL),
+	 ('Suppression ou entretien de la végétation fauchage et fenaison','03_46_suppression_ou_entretien_vegetation_fauchage_fenaison','pratique_agri_pasto',NULL,'3','46.0'),
+	 ('Infrastructure pastorale (cabane d’alpage, parc de tri…)','03_17_infrastructure_pastorale','pratique_agri_pasto',NULL,'3','17.0'),
+	 ('Création de pistes pastorales','03_13_piste_pastorale','pratique_agri_pasto',NULL,'3','13.0'),
+	 ('Abandon de systèmes pastoraux','03_47_abandon_syst_pastoraux','pratique_agri_pasto',NULL,'3','47.4'),
+	 ('Coupes, abattages, arrachages et déboisements','02_51_coupe','pratique_travaux_foret',NULL,'2','51.0'),
+	 ('Taille, élagage','02_52_taille_elagage','pratique_travaux_foret',NULL,'2','52.0'),
+	 ('Plantations','02_53_plantations','pratique_travaux_foret',NULL,'2','53.0'),
+	 ('Création de traînes et pistes forestières','02_55_piste_forestiere','pratique_travaux_foret',NULL,'2','55.0');
+INSERT INTO zones_humides.nomenclatures ("label",value,related_question,cd_nomenclature_coresp,code_activite_hum,code_impact) VALUES
+	 ('Baignade','07_61_baignade','pratique_loisirs',NULL,'7','61.0'),
+	 ('Proximité d’un sentier dans les 100 m','07_61_proximite_sentier','pratique_loisirs',NULL,'7','61.0'),
+	 ('Présence de déchets','07_61_dechets','pratique_loisirs',NULL,'7','61.0'),
+	 ('Bivouac','07_61_bivouac','pratique_loisirs',NULL,'7','61.0'),
+	 ('Proximité d’un refuge dans l’espace de fonctionnalité','07_16_proximite_refuge','pratique_loisirs',NULL,'7','16.0'),
+	 ('Prélèvements d’eau pour le fonctionnement d’un refuge','20_61_prelevement_eau_refuge','pratique_loisirs',NULL,'20','61.0'),
+	 ('Chasse','05_62_chasse','pratique_loisirs',NULL,'5','62.0'),
+	 ('Pêche','04_63_pêche','pratique_loisirs',NULL,'4','63.0'),
+	 ('Alevinage','04_63_alevinage','pratique_loisirs',NULL,'4','63.0'),
+	 ('Cueillette et ramassage','07_64_cueillette_et_ramassage','pratique_loisirs',NULL,'7','64.0');

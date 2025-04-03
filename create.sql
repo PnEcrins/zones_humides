@@ -2,8 +2,8 @@
 -- nomenclatures definition
 
 CREATE TABLE zones_humides.zh (
-	pk serial primary key,
-	geom public.geometry(Polygon, 4326),
+	pk serial4 NOT NULL,
+	geom public.geometry(polygon, 4326) NULL,
 	"date" date NULL,
 	heure_debut time NULL,
 	nom_zh text NULL,
@@ -18,6 +18,10 @@ CREATE TABLE zones_humides.zh (
 	localisation_pratique_loisirs text NULL,
 	uuid_sub text NULL,
 	espece_envahissante int4 NULL,
+	code_zh varchar(255) NULL,
+	secteur varchar(255) NULL,
+	"action" varchar(255) NULL,
+	CONSTRAINT zh_pkey PRIMARY KEY (pk),
 	CONSTRAINT fk_zh_espece_envahissante FOREIGN KEY (espece_envahissante) REFERENCES taxonomie.taxref(cd_nom)
 );
 
@@ -76,6 +80,12 @@ code_activite_hum character varying(255),
 code_impact character varying(255)
 );
 
+create table zones_humides.cor_rhomeo_eunis_corine_biotope (
+id serial primary key,
+code_rhomeo character varying(255),
+value_dest character varying(255),
+type_ref character varying(255)
+);
 
 CREATE OR REPLACE VIEW zones_humides.export_zh
 AS WITH indic AS (
@@ -258,6 +268,7 @@ UNION
   WHERE  nom.code_activite_hum IS NOT NULL;
 -- zones_humides.export_regional source
 
+
 CREATE OR REPLACE VIEW zones_humides.export_regional
 AS WITH delim AS (
          SELECT array_agg(nom.cd_nomenclature_coresp) AS cd_nomenclature_delimitation,
@@ -276,19 +287,55 @@ AS WITH delim AS (
            FROM zones_humides.cor_activite_impact_zh_decoded cor_decod
           GROUP BY cor_decod.id_zh, cor_decod.code_activite_hum
           , cor_decod.loc
-        )
+        ),
+      habitat_corine as (
+        SELECT 
+          z.pk, 
+          string_agg(cor_hab.value_dest, ', ') as habitat_corine_biotope
+        FROM zones_humides.zh z
+        JOIN zones_humides.cor_rhomeo_eunis_corine_biotope cor_hab on  cor_hab.code_rhomeo = substring(z.type_milieu, 0, 3) AND cor_hab.type_ref = 'CB'
+        GROUP BY z.pk
+      )
  SELECT z.pk,
-    z.date AS heure_debut,
+     z.code_zh,
+    z.action,
+    z.date AS date_visite,
     z.nom_zh,
     delim.cd_nomenclature_delimitation,
     nom_sdage.cd_nomenclature_coresp AS cd_typo_sdage,
     z.geom,
     z.observateur,
-    z.type_milieu,
-    array_to_json(array_agg(tmp.obj)) AS acti_impact
+    array_to_json(array_agg(tmp.obj)) AS acti_impact,
+    hab.habitat_corine_biotope
    FROM zones_humides.zh z
      LEFT JOIN zones_humides.nomenclatures nom_sdage ON z.typo_sdage = nom_sdage.value
      LEFT JOIN delim ON delim.id_zh = z.pk
      LEFT JOIN tmp ON tmp.id_zh = z.pk
-  GROUP BY z.pk, z.date, z.nom_zh, delim.cd_nomenclature_delimitation, nom_sdage.cd_nomenclature_coresp, z.geom, z.observateur, z.type_milieu
+     LEFT JOIN habitat_corine hab ON hab.pk = z.pk
+     where action != 'Problème'
+  GROUP BY z.pk,z.code_zh, z.action, z.date, z.nom_zh, delim.cd_nomenclature_delimitation, nom_sdage.cd_nomenclature_coresp, z.geom, z.observateur, hab.habitat_corine_biotope;
  
+
+
+ -- AJOUT SEQUENCES
+
+ -- sequence PACA
+ CREATE SEQUENCE zones_humides.code_zh_paca START 1;
+
+ -- sequence Valbo
+
+ CREATE SEQUENCE zones_humides.code_zh_valbo START 1;
+
+ -- sequence Oisans
+ CREATE SEQUENCE zones_humides.code_zh_oisans START 1;
+
+
+GRANT select, UPDATE ON zones_humides.code_zh_paca TO zh_user;
+GRANT select, UPDATE ON zones_humides.code_zh_valbo TO zh_user;
+GRANT select, UPDATE ON zones_humides.code_zh_oisans TO zh_user;
+GRANT select, UPDATE ON zones_humides.cor_rhomeo_eunis_corine_biotope TO zh_user;
+
+
+-- SELECT setval('zones_humides.code_zh_paca', 1, true);
+--  SELECT nextval('zones_humides.code_zh_paca ');
+

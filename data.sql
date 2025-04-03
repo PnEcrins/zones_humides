@@ -88,3 +88,86 @@ INSERT INTO zones_humides.nomenclatures ("label",value,related_question,cd_nomen
 	 ('Pêche','04_63_pêche','pratique_loisirs',NULL,'4','63.0'),
 	 ('Alevinage','04_63_alevinage','pratique_loisirs',NULL,'4','63.0'),
 	 ('Cueillette et ramassage','07_64_cueillette_et_ramassage','pratique_loisirs',NULL,'7','64.0');
+
+
+
+
+INSERT INTO zones_humides.cor_rhomeo_eunis_corine_biotope
+(code_rhomeo, value_dest, type_ref)
+VALUES
+('FU', 'F9.1', 'EUNIS'),
+('FU', 'F9.2', 'EUNIS'),
+('FU', '24.2', 'CB'),
+('FU', '44.1', 'CB'),
+('FU', '44.9', 'CB'),
+('BFH', 'F9.2', 'EUNIS'),
+('BFH', 'G1.1', 'EUNIS'),
+('BFH', '44.1', 'CB'),
+('BFH', '44.9', 'CB'),
+('BFH', '44.2', 'CB'),
+('BFH', '44.5', 'CB'),
+('BCH', 'G3.E', 'EUNIS'),
+('BCH', '44.A', 'CB'),
+('AL', 'C3.6', 'EUNIS'),
+('AL', '24.22', 'CB'),
+('AL', '24.32', 'CB'),
+('AL', '24.52', 'CB'),
+('AL', '24.53', 'CB'),
+
+('GH', 'C3.1', 'EUNIS'),
+('GH', 'C3.2', 'EUNIS'),
+('GH', 'D5.1', 'EUNIS'),
+('GH', 'D5.2', 'EUNIS'),
+('GH', '53.4', 'CB'),
+('GH', '53.1', 'CB'),
+('GH', '53.3', 'CB'),
+
+('RB', 'D5.3', 'EUNIS'),
+('RB', '53.5', 'CB'),
+('RB', '37.241', 'CB'),
+
+('MC', 'C3.2', 'EUNIS'),
+('MC', 'D5.2', 'EUNIS'),
+('MC', '53.2', 'CB'),
+
+('BM', 'D4.1', 'EUNIS'),
+('BM', 'D4.2', 'EUNIS'),
+('BM', '54.1', 'CB'),
+('BM', '54.2', 'CB'),
+
+('MG', 'E5.5', 'EUNIS'),
+('MG', '37.8', 'CB'),
+
+('AQ', 'C1.1', 'EUNIS'),
+('AQ', 'C1.2', 'EUNIS'),
+('AQ', 'C1.3', 'EUNIS'),
+('AQ', 'C1.4', 'EUNIS'),
+('AQ', '22.1', 'CB'),
+('AQ', '22.4', 'CB'),
+
+('FO', 'C2.1', 'EUNIS'),
+('FO', 'D2.2', 'EUNIS'),
+('FO', '24.1', 'CB'),
+('FO', '24.4', 'CB'),
+('FO', '54.1', 'CB'),
+('FO', '54.4', 'CB'),
+
+('EC', 'C3.4', 'EUNIS'),
+('EC', '22.3', 'CB'),
+
+('PH', 'E3.4', 'EUNIS'),
+('PH', 'E3.5', 'EUNIS'),
+('PH', '37.2', 'CB'),
+('PH', '37.3', 'CB')
+;
+
+
+
+
+
+
+
+
+
+
+

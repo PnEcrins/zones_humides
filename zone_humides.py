@@ -1,6 +1,7 @@
 import json
 import toml
 import psycopg2
+import psycopg2.extras
 import flatdict
 from pathlib import Path
 from datetime import datetime
@@ -14,7 +15,6 @@ BASE_DIR = Path(__file__).resolve().parent
 client = Client(BASE_DIR / "config.toml")
 config = toml.load(BASE_DIR / "config.toml")
 
-
 con = psycopg2.connect(
     database=config["output"]["DATABASE_NAME"],
     host=config["output"]["DATABASE_HOST"],
@@ -22,7 +22,7 @@ con = psycopg2.connect(
     user=config["output"]["DATABASE_USER"],
     password=config["output"]["DATABASE_PASS"]
 )
-cur = con.cursor()
+cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 media_path = Path(config["output"]["EXPORT_PHOTO_PATH"])
 if not media_path.exists():
@@ -36,6 +36,22 @@ def get_attachment(project_id, form_id, uuid_sub, media_name):
         return response.content
     else:
         None
+
+def delete_zh(uuid_sub):
+    sql = """ DELETE FROM zones_humides.zh where uuid_sub =  %s"""
+    cur.execute(sql, (uuid_sub,))
+
+def get_zh(uuid_sub):
+    sql = """
+        SELECT *
+        FROM zones_humides.zh
+        WHERE uuid_sub = %s
+    """
+    cur.execute(sql, (uuid_sub,))
+    res = cur.fetchone()
+
+    return res
+    
 
 
 def format_multiple(val):
@@ -84,6 +100,25 @@ def format_espece(sub, main_key, completement_key):
     return all_especes
 
 
+def get_date_hour(sub)-> tuple:
+    """_summary_
+
+    Parameters
+    ----------
+    sub : dict
+        the odk sumbission
+
+    Returns
+    -------
+    tuple:str
+        (date, hour)
+    """
+    meta_start_date = sub.get("start")
+    if meta_start_date:
+        p_date = datetime.fromisoformat(meta_start_date)
+        return p_date.strftime("%Y-%m-%d"), p_date.strftime("%H:%M")
+    return formated_sub["date_de_debut_saisie"], formated_sub["heure_de_debut_saisie"]
+
 def get_submissions(project_id, form_id):
     # Creation client odk central
     form_data = None
@@ -95,7 +130,8 @@ def get_submissions(project_id, form_id):
             filter="__system/reviewState ne 'hasIssues' and __system/reviewState ne 'rejected'",
         )
         return form_data["value"]
-    
+
+
 def flat_sub(sub):
     geom = sub.get("geom_zh")
     val = flatdict.FlatDict(sub, delimiter=".")
@@ -105,14 +141,14 @@ def flat_sub(sub):
         output_dict[path[len(path) - 1]] = val
     return geom, output_dict
 
-def insert_especes(table_name, list_espece):
+
+def insert_especes(table_name, list_espece, zh_pk):
     insert_especes = f"""
     INSERT INTO {table_name} (id_zh, cd_nom)
     VALUES (%(id_zh)s, %(cd_nom)s)
     """
 
-    cur.executemany(insert_especes, ({"id_zh": result[0], "cd_nom": cd_nom} for cd_nom in list_espece if cd_nom != "aucune"))
-
+    cur.executemany(insert_especes, ({"id_zh": zh_pk, "cd_nom": cd_nom} for cd_nom in list_espece if cd_nom != "aucune"))
 
 
 def update_review_state(project_id, form_id, submission_id, review_state):
@@ -160,13 +196,49 @@ def get_addi_fields_list():
     """
     cur.execute("select pk, nom_champ from zones_humides.bib_champs")
     fields = cur.fetchall()
-    return [{"field_name": f[1], "field_id": f[0]} for f in fields]
+    return [{"field_name": f["nom_champ"], "field_id": f["pk"]} for f in fields]
+
+
+def set_and_get_sequence(seq_name):
+    sql_seq = "select nextval(%s);"
+    cur.execute(sql_seq, (seq_name,))
+    return cur.fetchone()[0]
+
+
+def set_code_zh(geom):
+    """
+    Chaque ZH a un code particulier en fonction du secteur / bassin versant sur lequel
+    il se trouve.
+    On utilise les sequence PG pour incrémenter le code de la ZH
+    """
+    sql = """
+    select area_name 
+    from ref_geo.l_areas l 
+    where st_intersects(%s, l.geom_4326) and l.id_type = %s
+    """
+
+    cur.execute(sql, (geom, config["ID_TYPE_AREA_SECTEURS"]))
+    res = cur.fetchone()
+    if res:
+        secteur = res["area_name"]
+        if secteur in ('Champsaur', 'Vallouise', 'Valgaudemar', 'Briançonnais', 'Embrunais'):
+            next_sequence_val = set_and_get_sequence("zones_humides.code_zh_paca")
+            prefix = "0" if next_sequence_val >= 100 else "00"
+            return f"05PNE{prefix}{next_sequence_val}"
+        elif secteur == 'Valbonnais':
+            next_sequence_val = set_and_get_sequence("zones_humides.code_zh_valbo")
+            prefix = "0" if next_sequence_val > 100 else "00"
+            return f"38VA{prefix}{next_sequence_val}"
+        elif secteur == 'Oisans':
+            next_sequence_val = set_and_get_sequence("zones_humides.code_zh_oisans")
+            prefix = "0" if next_sequence_val >= 100 else "00"
+            return f"38RD{prefix}{next_sequence_val}"
+
+
 
 ################################################
 ################### MAIN ########################
 #################################################
-
-cur.execute("DELETE FROM zones_humides.zh")
 
 
 for f in config["CENTRAL_ADDI"]["FORMS"]:
@@ -174,13 +246,15 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
     FORM_CODE = f["FORM_CODE"]
     subs = get_submissions(PROJECT_ID, FORM_CODE)
 
+    # TODO : si edité : alors on supprime et on recree
+
     fields = [
         "date", "heure_debut", "nom_zh", "geom", "observateur", "typo_sdage", "type_milieu", 
         "pietinement", "autre_procesus_visible_text", "espece_envahissante",
         "localisation_pratique_gestion_eau", 
         "localisation_pratique_agri_pasto", 
         "localisation_pratique_travaux_foret", 
-        "localisation_pratique_loisirs", "uuid_sub",
+        "localisation_pratique_loisirs", "uuid_sub", "code_zh"
     ]
 
     insert_stmt = f"""
@@ -195,18 +269,35 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
     for sub in subs:
         geom, formated_sub = flat_sub(sub)
 
-        binary_geom = None
+    
+        # si il n'y a pas de geom on ne fait rien car on va perdre la geom
+        if not geom:
+            continue
+
         # calculate geom
-        if geom:
-            query_geom = "select ST_Force2D(ST_GeomFromGeoJSON(%s))"
-            cur.execute(query_geom, [json.dumps(geom)])
-            tuple_result = cur.fetchone()
-            if tuple_result:
-                binary_geom = tuple_result[0]
+        binary_geom = None
+        query_geom = "select ST_Force2D(ST_GeomFromGeoJSON(%s))"
+        cur.execute(query_geom, [json.dumps(geom)])
+        tuple_result = cur.fetchone()
+        if tuple_result:
+            binary_geom = tuple_result[0]
+        
+        code_zh = None
+        zh = get_zh(formated_sub['__id'])
+        if zh:
+            # sauvegarde du code ZH pour incrémenter les séquence
+            code_zh = zh["code_zh"]
+            # on supprime pour recréer plus bas
+            delete_zh(formated_sub['__id'])
+        else:
+            # si c'est une création on crée un code ZH en incrémentant les séquence
+            code_zh = set_code_zh(binary_geom)
+
+        date, hour = get_date_hour(formated_sub)
 
         value = [
-            formated_sub["date_de_debut_saisie"],
-            formated_sub["heure_de_debut_saisie"],
+            date,
+            hour,
             formated_sub["nom_zh"],
             binary_geom,
             formated_sub["observateur"],
@@ -220,8 +311,9 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
             formated_sub["localisation_pratique_travaux_foret"],
             formated_sub["localisation_pratique_loisirs"],
             # get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], formated_sub["image_zh"], formated_sub)
-            formated_sub['__id']
-            ]
+            formated_sub['__id'],
+            code_zh
+        ]
         cur.execute(insert_stmt, value)
         con.commit()
 
@@ -235,20 +327,20 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
         cur.execute(select_query, [formated_sub['__id']])
         result = cur.fetchone()
         if result:
-            inserted_id_zh = result[0]
+            inserted_id_zh = result["pk"]
 
         espece_indic = format_espece(formated_sub, "espece_indicatrice", "autre_espece_indic")
         espece_nitro = format_espece(formated_sub, "presence_espece_nitro", "autre_espece_eutrophisation")
         espece_pietin = format_espece(formated_sub, "espece_indicatrice_pietinement", "autre_espece_pietinement")
 
         if espece_indic:
-            insert_especes("zones_humides.cor_espece_indic_zh", espece_indic)
+            insert_especes("zones_humides.cor_espece_indic_zh", espece_indic, inserted_id_zh)
 
         if espece_nitro:
-            insert_especes("zones_humides.cor_espece_nitro_zh", espece_nitro)
+            insert_especes("zones_humides.cor_espece_nitro_zh", espece_nitro, inserted_id_zh)
 
         if espece_pietin:
-            insert_especes("zones_humides.cor_espece_pietinement_zh", espece_pietin)
+            insert_especes("zones_humides.cor_espece_pietinement_zh", espece_pietin, inserted_id_zh)
 
 
         # insert in cor_champs_addi

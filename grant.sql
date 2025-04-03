@@ -16,6 +16,11 @@ ON ALL SEQUENCES IN SCHEMA zones_humides
 
 
 
-grant SELECT ON taxonomie.taxref to zh_user;
 grant usage on schema taxonomie to zh_user;
+grant SELECT ON taxonomie.taxref to zh_user;
 grant references on taxonomie.taxref to zh_user;
+
+
+grant usage on schema ref_geo to zh_user;
+grant SELECT ON ref_geo.l_areas to zh_user;
+

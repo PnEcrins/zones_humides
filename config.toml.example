@@ -1,3 +1,6 @@
+# id_type des secteurs pour le calcul des codes ZH
+ID_TYPE_AREA_SECTEURS = 30
+
 [central]
 base_url = "https://odk.net"
 username = ""

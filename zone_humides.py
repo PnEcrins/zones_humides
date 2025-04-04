@@ -101,7 +101,9 @@ def format_espece(sub, main_key, completement_key):
 
 
 def get_date_hour(sub)-> tuple:
-    """_summary_
+    """Dans la v1 on avait la date et l'heure dans deux champs séparé
+    Dans la v2, tout est dans le champs "start", qui n'est pas édité lorsqu'on
+    met à jour la soumission depuis central
 
     Parameters
     ----------

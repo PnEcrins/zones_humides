@@ -268,7 +268,6 @@ UNION
   WHERE  nom.code_activite_hum IS NOT NULL;
 -- zones_humides.export_regional source
 
-
 CREATE OR REPLACE VIEW zones_humides.export_regional
 AS WITH delim AS (
          SELECT array_agg(nom.cd_nomenclature_coresp) AS cd_nomenclature_delimitation,
@@ -279,25 +278,19 @@ AS WITH delim AS (
           WHERE bc.nom_champ::text = 'critere_delimitation'::text
           GROUP BY addi.id_zh
         ), tmp AS (
-         SELECT json_build_object(
-            'cd_activite_humaine', cor_decod.code_activite_hum, 
-            'localisation',  cor_decod.loc,
-            'impact', array_agg(DISTINCT cor_decod.code_impact)) AS obj,
+         SELECT json_build_object('cd_activite_humaine', cor_decod.code_activite_hum, 'localisation', cor_decod.loc, 'impact', array_agg(DISTINCT cor_decod.code_impact)) AS obj,
             cor_decod.id_zh
            FROM zones_humides.cor_activite_impact_zh_decoded cor_decod
-          GROUP BY cor_decod.id_zh, cor_decod.code_activite_hum
-          , cor_decod.loc
-        ),
-      habitat_corine as (
-        SELECT 
-          z.pk, 
-          string_agg(cor_hab.value_dest, ', ') as habitat_corine_biotope
-        FROM zones_humides.zh z
-        JOIN zones_humides.cor_rhomeo_eunis_corine_biotope cor_hab on  cor_hab.code_rhomeo = substring(z.type_milieu, 0, 3) AND cor_hab.type_ref = 'CB'
-        GROUP BY z.pk
-      )
+          GROUP BY cor_decod.id_zh, cor_decod.code_activite_hum, cor_decod.loc
+        ), habitat_corine AS (
+         SELECT z_1.pk,
+            string_agg(cor_hab.value_dest::text, ', '::text) AS habitat_corine_biotope
+           FROM zones_humides.zh z_1
+             JOIN zones_humides.cor_rhomeo_eunis_corine_biotope cor_hab ON cor_hab.code_rhomeo::text = "substring"(z_1.type_milieu, 0, 3) AND cor_hab.type_ref::text = 'CB'::text
+          GROUP BY z_1.pk
+        )
  SELECT z.pk,
-     z.code_zh,
+    z.code_zh,
     z.action,
     z.date AS date_visite,
     z.nom_zh,
@@ -306,15 +299,23 @@ AS WITH delim AS (
     z.geom,
     z.observateur,
     array_to_json(array_agg(tmp.obj)) AS acti_impact,
-    hab.habitat_corine_biotope
+    hab.habitat_corine_biotope,
+    case 
+    	when z.secteur in ('Oisans', 'Valbonnais') then '38'
+    	else '05'
+    end as departement
+    
    FROM zones_humides.zh z
      LEFT JOIN zones_humides.nomenclatures nom_sdage ON z.typo_sdage = nom_sdage.value
      LEFT JOIN delim ON delim.id_zh = z.pk
      LEFT JOIN tmp ON tmp.id_zh = z.pk
      LEFT JOIN habitat_corine hab ON hab.pk = z.pk
-     where action != 'Problème'
-  GROUP BY z.pk,z.code_zh, z.action, z.date, z.nom_zh, delim.cd_nomenclature_delimitation, nom_sdage.cd_nomenclature_coresp, z.geom, z.observateur, hab.habitat_corine_biotope;
- 
+  WHERE z.action::text <> 'Problème'::text
+  GROUP BY z.pk, z.code_zh, z.action, z.date, z.nom_zh, delim.cd_nomenclature_delimitation, nom_sdage.cd_nomenclature_coresp, z.geom, z.observateur, hab.habitat_corine_biotope;
+  
+  
+  
+  
 
 
  -- AJOUT SEQUENCES

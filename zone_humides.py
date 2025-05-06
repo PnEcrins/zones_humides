@@ -270,6 +270,11 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
     addi_field_list = get_addi_fields_list()
     for sub in subs:
         geom, formated_sub = flat_sub(sub)
+        img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], formated_sub["image_zh"])
+        if img:
+            file_path = media_path / str(sub["nom_zh"].replace(" ", "_") + "_" + sub["__id"]+".jpg")
+            save_photo(img, file_path)
+        continue
 
     
         # si il n'y a pas de geom on ne fait rien car on va perdre la geom
@@ -319,11 +324,7 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
         # cur.execute(insert_stmt, value)
         # con.commit()
 
-        img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], formated_sub["image_zh"])
-        if img:
-            file_path = media_path / str(sub["nom_zh"].replace(" ", "_") + "_" + sub["__id"]+".jpg")
-            save_photo(img, file_path)
-        continue
+
 
         inserted_id_zh = None
         select_query = "SELECT pk from zones_humides.zh where uuid_sub = %s"

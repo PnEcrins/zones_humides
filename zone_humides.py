@@ -129,7 +129,7 @@ def get_submissions(project_id, form_id):
             form_id=form_id,
             project_id=project_id,
             expand="*",
-            filter="__system/reviewState ne 'hasIssues' and __system/reviewState ne 'rejected'",
+            filter="__system/reviewState ne 'approved' and __system/reviewState ne 'hasIssues' and __system/reviewState ne 'rejected'",
         )
         return form_data["value"]
 
@@ -238,6 +238,29 @@ def set_code_zh(geom):
 
 
 
+def insert_all_especes(formated_sub, id_zh):
+    espece_indic = format_espece(formated_sub, "espece_indicatrice", "autre_espece_indic")
+    espece_nitro = format_espece(formated_sub, "presence_espece_nitro", "autre_espece_eutrophisation")
+    espece_pietin = format_espece(formated_sub, "espece_indicatrice_pietinement", "autre_espece_pietinement")
+
+    if espece_indic:
+        insert_especes("zones_humides.cor_espece_indic_zh", espece_indic, id_zh)
+
+    if espece_nitro:
+        insert_especes("zones_humides.cor_espece_nitro_zh", espece_nitro, id_zh)
+
+    if espece_pietin:
+        insert_especes("zones_humides.cor_espece_pietinement_zh", espece_pietin, id_zh)
+
+
+def delete_data_in_cor_especes(id_zh):
+    sql = "DELETE FROM zones_humides.cor_espece_nitro_zh where id_zh = %s"
+    cur.execute(sql, [id_zh])
+    sql = "DELETE FROM zones_humides.cor_espece_nitro_zh where id_zh = %s"
+    cur.execute(sql, [id_zh])
+    sql = "DELETE FROM zones_humides.cor_espece_pietinement_zh where id_zh = %s"
+    cur.execute(sql, [id_zh])
+    con.commit()
 ################################################
 ################### MAIN ########################
 #################################################
@@ -247,8 +270,6 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
     PROJECT_ID = f["PROJECT_ID"]
     FORM_CODE = f["FORM_CODE"]
     subs = get_submissions(PROJECT_ID, FORM_CODE)
-
-    # TODO : si edité : alors on supprime et on recree
 
     fields = [
         "date", "heure_debut", "nom_zh", "geom", "observateur", "typo_sdage", "type_milieu", 
@@ -270,6 +291,19 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
     addi_field_list = get_addi_fields_list()
     for sub in subs:
         geom, formated_sub = flat_sub(sub)
+
+        zh_already_exists = False
+        select_query = "SELECT pk from zones_humides.zh where uuid_sub = %s"
+        cur.execute(select_query, [formated_sub['__id']])
+        result = cur.fetchone()
+        if result:
+            zh_already_exists = True
+        
+        if zh_already_exists:
+            delete_data_in_cor_especes(result["pk"])
+            insert_all_especes(formated_sub, result["pk"])
+            con.commit()
+            continue
 
     
         # si il n'y a pas de geom on ne fait rien car on va perdre la geom
@@ -331,19 +365,7 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
         if result:
             inserted_id_zh = result["pk"]
 
-        espece_indic = format_espece(formated_sub, "espece_indicatrice", "autre_espece_indic")
-        espece_nitro = format_espece(formated_sub, "presence_espece_nitro", "autre_espece_eutrophisation")
-        espece_pietin = format_espece(formated_sub, "espece_indicatrice_pietinement", "autre_espece_pietinement")
-
-        if espece_indic:
-            insert_especes("zones_humides.cor_espece_indic_zh", espece_indic, inserted_id_zh)
-
-        if espece_nitro:
-            insert_especes("zones_humides.cor_espece_nitro_zh", espece_nitro, inserted_id_zh)
-
-        if espece_pietin:
-            insert_especes("zones_humides.cor_espece_pietinement_zh", espece_pietin, inserted_id_zh)
-
+        insert_all_especes(formated_sub, inserted_id_zh)
 
         # insert in cor_champs_addi
         for field in addi_field_list:
@@ -368,6 +390,8 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
                 except Exception as e:
                     print(str(e))
                     print("Error while downloading photo")
+
+        update_review_state(PROJECT_ID, FORM_CODE, formated_sub["__id"], "approved")
 
 
 

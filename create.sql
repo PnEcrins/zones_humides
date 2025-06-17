@@ -21,9 +21,21 @@ CREATE TABLE zones_humides.zh (
 	code_zh varchar(255) NULL,
 	secteur varchar(255) NULL,
 	"action" varchar(255) NULL,
+  geom_overlap boolean default false,
+  geom_valid boolean default false,
+  geom_intersect_reg boolean default false,
+  diffusion boolean default true,
+  comment_diffusion text,
+
 	CONSTRAINT zh_pkey PRIMARY KEY (pk),
 	CONSTRAINT fk_zh_espece_envahissante FOREIGN KEY (espece_envahissante) REFERENCES taxonomie.taxref(cd_nom)
 );
+
+COMMENT ON COLUMN zones_humides.zh.geom_overlap IS 'Vrai si deux ZH de l''inventaire PNE se superposent';
+
+COMMENT ON COLUMN zones_humides.zh.geom_valid IS 'Vrai si la géométrie est valide (ST_IsValid)';
+
+COMMENT ON COLUMN zones_humides.zh.geom_intersect_reg IS 'Vrai si la géométrie d''une ZH PNE intersecte une geom de l''inventaire régionale';
 
 
 CREATE TABLE zones_humides.cor_espece_indic_zh (
@@ -87,6 +99,9 @@ value_dest character varying(255),
 type_ref character varying(255)
 );
 
+
+-- zones_humides.export_zh source
+
 CREATE OR REPLACE VIEW zones_humides.export_zh
 AS WITH indic AS (
          SELECT array_agg(t_1.lb_nom) AS especes,
@@ -106,61 +121,61 @@ AS WITH indic AS (
            FROM zones_humides.cor_espece_pietinement_zh
              JOIN taxonomie.taxref t_1 ON t_1.cd_nom = cor_espece_pietinement_zh.cd_nom
           GROUP BY cor_espece_pietinement_zh.id_zh
-        ),
-        delim as (
-        	select array_agg(addi.label) as delimitation_zh, addi.id_zh
-        	from zones_humides.cor_champs_addi addi
-        	join zones_humides.bib_champs bc on bc.pk = addi.id_type_champ
-        	where bc.nom_champ = 'critere_delimitation'
-        	group by addi.id_zh
-        ),
-        source_pietinement as (
-        	select array_agg(addi.label) as source_pietinement, addi.id_zh
-        	from zones_humides.cor_champs_addi addi
-        	join zones_humides.bib_champs bc on bc.pk = addi.id_type_champ
-        	where bc.nom_champ = 'source_pietinement'
-        	group by addi.id_zh
-        ),
-        autre_procesus_visible as (
-        	select array_agg(addi.label) as autre_procesus_visible, addi.id_zh
-        	from zones_humides.cor_champs_addi addi
-        	join zones_humides.bib_champs bc on bc.pk = addi.id_type_champ
-        	where bc.nom_champ = 'autre_procesus_visible'
-        	group by addi.id_zh
-        ),
-        pratique_gestion_eau as (
-        	select array_agg(addi.label) as pratique_gestion_eau, addi.id_zh
-        	from zones_humides.cor_champs_addi addi
-        	join zones_humides.bib_champs bc on bc.pk = addi.id_type_champ
-        	where bc.nom_champ = 'pratique_gestion_eau'
-        	group by addi.id_zh
-        ),
-        pratique_agri_pasto as (
-        	select array_agg(addi.label) as pratique_agri_pasto, addi.id_zh
-        	from zones_humides.cor_champs_addi addi
-        	join zones_humides.bib_champs bc on bc.pk = addi.id_type_champ
-        	where bc.nom_champ = 'pratique_agri_pasto'
-        	group by addi.id_zh
-        ),
-        pratique_travaux_foret as (
-        	select array_agg(addi.label) as pratique_travaux_foret, addi.id_zh
-        	from zones_humides.cor_champs_addi addi
-        	join zones_humides.bib_champs bc on bc.pk = addi.id_type_champ
-        	where bc.nom_champ = 'pratique_travaux_foret'
-        	group by addi.id_zh
-        ),
-        pratique_loisirs as (
-        	select array_agg(addi.label) as pratique_loisirs, addi.id_zh
-        	from zones_humides.cor_champs_addi addi
-        	join zones_humides.bib_champs bc on bc.pk = addi.id_type_champ
-        	where bc.nom_champ = 'pratique_loisirs'
-        	group by addi.id_zh
+        ), delim AS (
+         SELECT array_agg(addi.label) AS delimitation_zh,
+            addi.id_zh
+           FROM zones_humides.cor_champs_addi addi
+             JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
+          WHERE bc.nom_champ::text = 'critere_delimitation'::text
+          GROUP BY addi.id_zh
+        ), source_pietinement AS (
+         SELECT array_agg(addi.label) AS source_pietinement,
+            addi.id_zh
+           FROM zones_humides.cor_champs_addi addi
+             JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
+          WHERE bc.nom_champ::text = 'source_pietinement'::text
+          GROUP BY addi.id_zh
+        ), autre_procesus_visible AS (
+         SELECT array_agg(addi.label) AS autre_procesus_visible,
+            addi.id_zh
+           FROM zones_humides.cor_champs_addi addi
+             JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
+          WHERE bc.nom_champ::text = 'autre_procesus_visible'::text
+          GROUP BY addi.id_zh
+        ), pratique_gestion_eau AS (
+         SELECT array_agg(addi.label) AS pratique_gestion_eau,
+            addi.id_zh
+           FROM zones_humides.cor_champs_addi addi
+             JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
+          WHERE bc.nom_champ::text = 'pratique_gestion_eau'::text
+          GROUP BY addi.id_zh
+        ), pratique_agri_pasto AS (
+         SELECT array_agg(addi.label) AS pratique_agri_pasto,
+            addi.id_zh
+           FROM zones_humides.cor_champs_addi addi
+             JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
+          WHERE bc.nom_champ::text = 'pratique_agri_pasto'::text
+          GROUP BY addi.id_zh
+        ), pratique_travaux_foret AS (
+         SELECT array_agg(addi.label) AS pratique_travaux_foret,
+            addi.id_zh
+           FROM zones_humides.cor_champs_addi addi
+             JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
+          WHERE bc.nom_champ::text = 'pratique_travaux_foret'::text
+          GROUP BY addi.id_zh
+        ), pratique_loisirs AS (
+         SELECT array_agg(addi.label) AS pratique_loisirs,
+            addi.id_zh
+           FROM zones_humides.cor_champs_addi addi
+             JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
+          WHERE bc.nom_champ::text = 'pratique_loisirs'::text
+          GROUP BY addi.id_zh
         )
  SELECT z.pk,
     z.date AS heure_debut,
     z.nom_zh,
-    delim.delimitation_zh, 
-	z.geom,
+    delim.delimitation_zh,
+    z.geom,
     z.observateur,
     z.typo_sdage,
     z.type_milieu,
@@ -178,7 +193,8 @@ AS WITH indic AS (
     z.localisation_pratique_loisirs,
     indic.especes AS espece_indic,
     nitro.especes AS espece_nitro,
-    pieti.especes AS espece_pieti
+    pieti.especes AS espece_pieti,
+    concat('https://geonature.ecrins-parcnational.fr/zh/', z.nom_zh, '_', z.uuid_sub, '.jpg') as url_image
    FROM zones_humides.zh z
      LEFT JOIN taxonomie.taxref t ON t.cd_nom = z.espece_envahissante
      LEFT JOIN indic ON indic.id_zh = z.pk
@@ -191,11 +207,6 @@ AS WITH indic AS (
      LEFT JOIN pratique_agri_pasto ON pratique_agri_pasto.id_zh = z.pk
      LEFT JOIN pratique_travaux_foret ON pratique_travaux_foret.id_zh = z.pk
      LEFT JOIN pratique_loisirs ON pratique_loisirs.id_zh = z.pk;
-     
-
-
-
-
 
 
 -- Vue intemediaire qui décode toutes les activité humaines / impact de chaque ZH avec les code_nomenclatures
@@ -310,8 +321,9 @@ AS WITH delim AS (
      LEFT JOIN delim ON delim.id_zh = z.pk
      LEFT JOIN tmp ON tmp.id_zh = z.pk
      LEFT JOIN habitat_corine hab ON hab.pk = z.pk
-  WHERE z.action::text <> 'Problème'::text
-  GROUP BY z.pk, z.code_zh, z.action, z.date, z.nom_zh, delim.cd_nomenclature_delimitation, nom_sdage.cd_nomenclature_coresp, z.geom, z.observateur, hab.habitat_corine_biotope;
+  WHERE geom_overlap is FALSE and geom_valid is TRUE and geom_intersect_reg = FALSE and diffusion = true
+  GROUP BY z.pk, z.code_zh, z.action, z.date, z.nom_zh, delim.cd_nomenclature_delimitation, 
+  nom_sdage.cd_nomenclature_coresp, z.geom, z.observateur, hab.habitat_corine_biotope;
   
   
   
@@ -339,4 +351,67 @@ GRANT select, UPDATE ON zones_humides.cor_rhomeo_eunis_corine_biotope TO zh_user
 
 -- SELECT setval('zones_humides.code_zh_paca', 1, true);
 --  SELECT nextval('zones_humides.code_zh_paca ');
+
+
+---------------------------------
+--------TRIGGERS-----------------
+---------------------------------
+
+
+
+-- DROP FUNCTION gn_synthese.fct_trig_update_in_cor_area_synthese();
+
+CREATE OR REPLACE FUNCTION zones_humides.check_geom_overlap()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+      DECLARE
+      BEGIN
+	update zones_humides.zh
+	set geom_overlap = true where pk in ( 
+		SELECT a.pk
+		FROM zones_humides.zh a
+		INNER JOIN zones_humides.zh b ON 
+		(a.geom && b.geom AND ST_Overlaps(a.geom, b.geom))
+		WHERE a.pk != b.pk
+);
+	update zones_humides.zh
+	set geom_overlap = false where pk not in ( 
+		SELECT a.pk
+		FROM zones_humides.zh a
+		INNER JOIN zones_humides.zh b ON 
+		(a.geom && b.geom AND ST_Overlaps(a.geom, b.geom))
+		WHERE a.pk != b.pk
+);
+      RETURN NULL;
+      END;
+      $function$
+;
+
+
+create trigger tri_insert_update_check_overlap after insert or update
+    of geom on
+    zones_humides.zh for each row execute function zones_humides.check_geom_overlap();
+
+
+
+CREATE OR REPLACE FUNCTION zones_humides.check_validity()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+      DECLARE
+      BEGIN
+		update zones_humides.zh
+		set geom_valid = ST_IsValid(new.geom)
+		where zh.pk = new.pk;
+
+      RETURN NULL;
+      END;
+      $function$
+;
+
+
+create trigger tri_insert_update_check_geom_val after insert or update
+    of geom on
+    zones_humides.zh for each row execute function zones_humides.check_validity();
 

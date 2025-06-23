@@ -23,7 +23,8 @@ CREATE TABLE zones_humides.zh (
 	"action" varchar(255) NULL,
   geom_overlap boolean default false,
   geom_valid boolean default false,
-  geom_intersect_reg boolean default false,
+  geom_intersect_reg boolean default true,
+  valid_topology boolean default false,
   diffusion boolean default true,
   comment_diffusion text,
 
@@ -321,7 +322,7 @@ AS WITH delim AS (
      LEFT JOIN delim ON delim.id_zh = z.pk
      LEFT JOIN tmp ON tmp.id_zh = z.pk
      LEFT JOIN habitat_corine hab ON hab.pk = z.pk
-  WHERE geom_overlap is FALSE and geom_valid is TRUE and geom_intersect_reg = FALSE and diffusion = true
+  WHERE geom_overlap is FALSE and geom_valid is TRUE and geom_intersect_reg = FALSE and diffusion = true and valid_topology = true
   GROUP BY z.pk, z.code_zh, z.action, z.date, z.nom_zh, delim.cd_nomenclature_delimitation, 
   nom_sdage.cd_nomenclature_coresp, z.geom, z.observateur, hab.habitat_corine_biotope;
   

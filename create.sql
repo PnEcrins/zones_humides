@@ -103,69 +103,70 @@ type_ref character varying(255)
 
 -- zones_humides.export_zh source
 
+
 CREATE OR REPLACE VIEW zones_humides.export_zh
 AS WITH indic AS (
-         SELECT array_agg(t_1.lb_nom) AS especes,
+         SELECT string_agg(t_1.lb_nom::text, ', '::text) AS especes,
             cor_espece_indic_zh.id_zh
            FROM zones_humides.cor_espece_indic_zh
              JOIN taxonomie.taxref t_1 ON t_1.cd_nom = cor_espece_indic_zh.cd_nom
           GROUP BY cor_espece_indic_zh.id_zh
         ), nitro AS (
-         SELECT array_agg(t_1.lb_nom) AS especes,
+         SELECT string_agg(t_1.lb_nom::text, ', '::text) AS especes,
             cor_espece_nitro_zh.id_zh
            FROM zones_humides.cor_espece_nitro_zh
              JOIN taxonomie.taxref t_1 ON t_1.cd_nom = cor_espece_nitro_zh.cd_nom
           GROUP BY cor_espece_nitro_zh.id_zh
         ), pieti AS (
-         SELECT array_agg(t_1.lb_nom) AS especes,
+         SELECT string_agg(t_1.lb_nom::text, ', '::text) AS especes,
             cor_espece_pietinement_zh.id_zh
            FROM zones_humides.cor_espece_pietinement_zh
              JOIN taxonomie.taxref t_1 ON t_1.cd_nom = cor_espece_pietinement_zh.cd_nom
           GROUP BY cor_espece_pietinement_zh.id_zh
         ), delim AS (
-         SELECT array_agg(addi.label) AS delimitation_zh,
+         SELECT string_agg(addi.label::text, ' '::text) AS delimitation_zh,
             addi.id_zh
            FROM zones_humides.cor_champs_addi addi
              JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
           WHERE bc.nom_champ::text = 'critere_delimitation'::text
           GROUP BY addi.id_zh
         ), source_pietinement AS (
-         SELECT array_agg(addi.label) AS source_pietinement,
+         SELECT string_agg(addi.label::text, ', '::text) AS source_pietinement,
             addi.id_zh
            FROM zones_humides.cor_champs_addi addi
              JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
           WHERE bc.nom_champ::text = 'source_pietinement'::text
           GROUP BY addi.id_zh
         ), autre_procesus_visible AS (
-         SELECT array_agg(addi.label) AS autre_procesus_visible,
+         SELECT string_agg(addi.label::text, ', '::text) AS autre_procesus_visible,
             addi.id_zh
            FROM zones_humides.cor_champs_addi addi
              JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
           WHERE bc.nom_champ::text = 'autre_procesus_visible'::text
           GROUP BY addi.id_zh
         ), pratique_gestion_eau AS (
-         SELECT array_agg(addi.label) AS pratique_gestion_eau,
+         SELECT string_agg(addi.label::text, ', '::text) AS pratique_gestion_eau,
             addi.id_zh
            FROM zones_humides.cor_champs_addi addi
              JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
           WHERE bc.nom_champ::text = 'pratique_gestion_eau'::text
           GROUP BY addi.id_zh
         ), pratique_agri_pasto AS (
-         SELECT array_agg(addi.label) AS pratique_agri_pasto,
+         SELECT string_agg(addi.label::text, ', '::text) AS pratique_agri_pasto,
             addi.id_zh
            FROM zones_humides.cor_champs_addi addi
              JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
           WHERE bc.nom_champ::text = 'pratique_agri_pasto'::text
           GROUP BY addi.id_zh
         ), pratique_travaux_foret AS (
-         SELECT array_agg(addi.label) AS pratique_travaux_foret,
+         SELECT string_agg(addi.label::text, ', '::text) AS pratique_travaux_foret,
             addi.id_zh
            FROM zones_humides.cor_champs_addi addi
              JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
           WHERE bc.nom_champ::text = 'pratique_travaux_foret'::text
           GROUP BY addi.id_zh
         ), pratique_loisirs AS (
-         SELECT array_agg(addi.label) AS pratique_loisirs,
+         SELECT string_agg(addi.label::text, ', '::text) AS pratique_loisirs,
             addi.id_zh
            FROM zones_humides.cor_champs_addi addi
              JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
@@ -195,7 +196,7 @@ AS WITH indic AS (
     indic.especes AS espece_indic,
     nitro.especes AS espece_nitro,
     pieti.especes AS espece_pieti,
-    concat('https://geonature.ecrins-parcnational.fr/zh/', z.nom_zh, '_', z.uuid_sub, '.jpg') as url_image
+    concat('https://geonature.ecrins-parcnational.fr/api/media/zh/', replace(z.nom_zh, ' '::text, '_'::text), '_', z.uuid_sub, '.jpg') AS url_image
    FROM zones_humides.zh z
      LEFT JOIN taxonomie.taxref t ON t.cd_nom = z.espece_envahissante
      LEFT JOIN indic ON indic.id_zh = z.pk
@@ -208,7 +209,6 @@ AS WITH indic AS (
      LEFT JOIN pratique_agri_pasto ON pratique_agri_pasto.id_zh = z.pk
      LEFT JOIN pratique_travaux_foret ON pratique_travaux_foret.id_zh = z.pk
      LEFT JOIN pratique_loisirs ON pratique_loisirs.id_zh = z.pk;
-
 
 -- Vue intemediaire qui décode toutes les activité humaines / impact de chaque ZH avec les code_nomenclatures
 -- utilisées par le module ZH GN

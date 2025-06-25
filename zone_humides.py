@@ -355,7 +355,8 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
 
         img = get_attachment(PROJECT_ID, FORM_CODE, formated_sub["__id"], formated_sub["image_zh"])
         if img:
-            file_path = media_path / str(sub["nom_zh"] + "_" + sub["__id"]+".jpg")
+            formated_nom_zh = sub["nom_zh"].replace(" ", "_")
+            file_path = media_path / str(formated_nom_zh + "_" + sub["__id"]+".jpg")
             save_photo(img, file_path)
 
         inserted_id_zh = None

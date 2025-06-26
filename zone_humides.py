@@ -1,4 +1,5 @@
 import json
+import os
 import toml
 import psycopg2
 import psycopg2.extras
@@ -12,7 +13,13 @@ from pyodk.client import Client
 
 BASE_DIR = Path(__file__).resolve().parent
 
-client = Client(BASE_DIR / "config.toml")
+cache_file = BASE_DIR / ".pyodk_cache.toml"
+os.environ["PYODK_CACHE_FILE"] = cache_file
+
+# HACK : comprend pas comment fonctionne le cache de PYODK, donc on supprime le fichier ou le token est stocké
+if cache_file.exists():
+    cache_file.unlink()
+
 config = toml.load(BASE_DIR / "config.toml")
 
 con = psycopg2.connect(
@@ -27,6 +34,13 @@ cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 media_path = Path(config["output"]["EXPORT_PHOTO_PATH"])
 if not media_path.exists():
     media_path.mkdir(parents=True)
+
+def get_client():
+    client = Client(config_path=BASE_DIR / "config.toml")
+    client = client.open()
+    return client
+
+client = get_client()
 
 def get_attachment(project_id, form_id, uuid_sub, media_name):
     response = client.get(

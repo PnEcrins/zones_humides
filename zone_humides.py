@@ -14,7 +14,7 @@ from pyodk.client import Client
 BASE_DIR = Path(__file__).resolve().parent
 
 cache_file = BASE_DIR / ".pyodk_cache.toml"
-os.environ["PYODK_CACHE_FILE"] = cache_file
+os.environ["PYODK_CACHE_FILE"] = str(cache_file)
 
 # HACK : comprend pas comment fonctionne le cache de PYODK, donc on supprime le fichier ou le token est stocké
 if cache_file.exists():

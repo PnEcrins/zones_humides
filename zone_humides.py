@@ -317,6 +317,7 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
             delete_data_in_cor_especes(result["pk"])
             insert_all_especes(formated_sub, result["pk"])
             con.commit()
+            update_review_state(PROJECT_ID, FORM_CODE, formated_sub["__id"], "approved")
             continue
 
     

@@ -268,7 +268,7 @@ def insert_all_especes(formated_sub, id_zh):
 
 
 def delete_data_in_cor_especes(id_zh):
-    sql = "DELETE FROM zones_humides.cor_espece_nitro_zh where id_zh = %s"
+    sql = "DELETE FROM zones_humides.cor_espece_indic_zh where id_zh = %s"
     cur.execute(sql, [id_zh])
     sql = "DELETE FROM zones_humides.cor_espece_nitro_zh where id_zh = %s"
     cur.execute(sql, [id_zh])

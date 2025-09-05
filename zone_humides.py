@@ -301,11 +301,10 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
         )
     VALUES({",".join(["%s" for f in fields])});
     """
-
+    print(subs)
     addi_field_list = get_addi_fields_list()
     for sub in subs:
         geom, formated_sub = flat_sub(sub)
-
         zh_already_exists = False
         select_query = "SELECT pk from zones_humides.zh where uuid_sub = %s"
         cur.execute(select_query, [formated_sub['__id']])
@@ -316,6 +315,8 @@ for f in config["CENTRAL_ADDI"]["FORMS"]:
         if zh_already_exists:
             delete_data_in_cor_especes(result["pk"])
             insert_all_especes(formated_sub, result["pk"])
+            sql_update_espece_env = "UPDATE zones_humides.zh SET espece_envahissante = %(cd_nom)s where pk= %(id_zh)s" 
+            cur.execute(sql_update_espece_env, {"cd_nom": formated_sub["espece_envahissance"], "id_zh":result["pk"]})
             con.commit()
             update_review_state(PROJECT_ID, FORM_CODE, formated_sub["__id"], "approved")
             continue

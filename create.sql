@@ -87,11 +87,13 @@ CREATE TABLE zones_humides.nomenclatures (
 id serial primary key,
 label text not null,
 value text not null,
-related_question text not null,
 cd_nomenclature_coresp character varying(255),
 code_activite_hum character varying(255),
 code_impact character varying(255)
+id_type_nomenclaure integer
 );
+alter table zones_humides.nomenclatures ADD FOREIGN KEY (id_type_nomenclature) REFERENCES zones_humides.bib_champs(pk);
+
 
 create table zones_humides.cor_rhomeo_eunis_corine_biotope (
 id serial primary key,
@@ -214,73 +216,149 @@ AS WITH indic AS (
 -- utilisées par le module ZH GN
 
 
--- zones_humides.cor_activite_impact_zh_decoded source
+ 
+ 
 CREATE OR REPLACE VIEW zones_humides.cor_activite_impact_zh_decoded
-AS 
-SELECT DISTINCT nom.code_activite_hum,
+AS SELECT nom.code_activite_hum,
     nom.code_impact,
     addi.id_zh,
     '1' as loc -- au niveau de la zone humide
-   FROM zones_humides.cor_champs_addi addi
-    JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
-    JOIN zones_humides.nomenclatures nom ON addi.label::text = nom.value
-  WHERE bc.nom_champ::text = 'source_pietinement'::text AND nom.code_activite_hum IS NOT NULL
+   FROM zones_humides.zh
+     JOIN zones_humides.cor_champs_addi addi ON addi.id_zh = zh.pk AND addi.id_type_champ = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'source_pietinement'::text))
+     JOIN zones_humides.nomenclatures nom ON nom.value = addi.label::text AND nom.id_type_nomenclature = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'source_pietinement'::text))
+  WHERE nom.code_activite_hum IS NOT NULL
 UNION
- SELECT DISTINCT nom.code_activite_hum,
+ SELECT nom.code_activite_hum,
     nom.code_impact,
     addi.id_zh,
     '0' as loc -- on ne connait pas la localisation des autres procesus visibles
-   FROM zones_humides.cor_champs_addi addi
-     JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
-     JOIN zones_humides.nomenclatures nom ON addi.label::text = nom.value
-  WHERE bc.nom_champ::text = 'autre_procesus_visible'::text AND nom.code_activite_hum IS NOT NULL
-UNION
- SELECT DISTINCT nom.code_activite_hum,
-    nom.code_impact,
-    addi.id_zh,
-    loc.cd_nomenclature_coresp as loc
-   FROM zones_humides.cor_champs_addi addi
-     JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
-     JOIN zones_humides.nomenclatures nom ON addi.label::text = nom.value and bc.nom_champ::text = 'pratique_gestion_eau'::text
-     join zones_humides.zh z on addi.id_zh = z.pk
-     left join zones_humides.nomenclatures loc on loc.value = z.localisation_pratique_gestion_eau
+   FROM zones_humides.zh
+     JOIN zones_humides.cor_champs_addi addi ON addi.id_zh = zh.pk AND addi.id_type_champ = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'autre_procesus_visible'::text))
+     JOIN zones_humides.nomenclatures nom ON nom.value = addi.label::text AND nom.id_type_nomenclature = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'autre_procesus_visible'::text))
   WHERE nom.code_activite_hum IS NOT NULL
 UNION
- SELECT DISTINCT nom.code_activite_hum,
+ SELECT nom.code_activite_hum,
     nom.code_impact,
     addi.id_zh,
     loc.cd_nomenclature_coresp as loc
-   FROM zones_humides.cor_champs_addi addi
-     JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
-     JOIN zones_humides.nomenclatures nom ON addi.label::text = nom.value and bc.nom_champ::text = 'pratique_agri_pasto'::text
-     join zones_humides.zh z on addi.id_zh = z.pk
-     left join zones_humides.nomenclatures loc on loc.value = z.localisation_pratique_agri_pasto
-  WHERE   nom.code_activite_hum IS NOT NULL
-UNION
- SELECT DISTINCT nom.code_activite_hum,
-    nom.code_impact,
-    addi.id_zh,
-    loc.cd_nomenclature_coresp as loc
-   FROM zones_humides.cor_champs_addi addi
-     JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
-     JOIN zones_humides.nomenclatures nom ON addi.label::text = nom.value and bc.nom_champ::text = 'pratique_travaux_foret'::text
-     join zones_humides.zh z on addi.id_zh = z.pk
-     left join zones_humides.nomenclatures loc on loc.value = z.localisation_pratique_travaux_foret
-  WHERE  nom.code_activite_hum IS NOT NULL
-UNION
- SELECT DISTINCT nom.code_activite_hum,
-    nom.code_impact,
-    addi.id_zh,
-    loc.cd_nomenclature_coresp as loc
-   FROM zones_humides.cor_champs_addi addi
-     JOIN zones_humides.bib_champs bc ON bc.pk = addi.id_type_champ
-     JOIN zones_humides.nomenclatures nom ON addi.label::text = nom.value and bc.nom_champ::text = 'pratique_loisirs'::text
-     join zones_humides.zh z on addi.id_zh = z.pk
-     left join zones_humides.nomenclatures loc on loc.value = z.localisation_pratique_loisirs
-  WHERE  nom.code_activite_hum IS NOT NULL;
--- zones_humides.export_regional source
+   FROM zones_humides.zh
+     JOIN zones_humides.cor_champs_addi addi ON addi.id_zh = zh.pk AND addi.id_type_champ = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'pratique_gestion_eau'::text))
+     JOIN zones_humides.nomenclatures nom ON nom.value = addi.label::text AND nom.id_type_nomenclature = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'pratique_gestion_eau'::text))
+     left join zones_humides.nomenclatures loc on loc.value = zh.localisation_pratique_gestion_eau
 
-CREATE OR REPLACE VIEW zones_humides.export_regional
+  WHERE nom.code_activite_hum IS NOT NULL
+UNION
+ SELECT nom.code_activite_hum,
+    nom.code_impact,
+    addi.id_zh,
+    loc.cd_nomenclature_coresp as loc
+   FROM zones_humides.zh
+     JOIN zones_humides.cor_champs_addi addi ON addi.id_zh = zh.pk AND addi.id_type_champ = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'pratique_agri_pasto'::text))
+     JOIN zones_humides.nomenclatures nom ON nom.value = addi.label::text AND nom.id_type_nomenclature = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'pratique_agri_pasto'::text))
+     left join zones_humides.nomenclatures loc on loc.value = zh.localisation_pratique_agri_pasto
+  WHERE nom.code_activite_hum IS NOT NULL
+UNION
+ SELECT nom.code_activite_hum,
+    nom.code_impact,
+    addi.id_zh,
+    loc.cd_nomenclature_coresp as loc
+   FROM zones_humides.zh
+     JOIN zones_humides.cor_champs_addi addi ON addi.id_zh = zh.pk AND addi.id_type_champ = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'pratique_travaux_foret'::text))
+     JOIN zones_humides.nomenclatures nom ON nom.value = addi.label::text AND nom.id_type_nomenclature = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'pratique_travaux_foret'::text))
+     left join zones_humides.nomenclatures loc on loc.value = zh.localisation_pratique_travaux_foret
+    WHERE nom.code_activite_hum IS NOT NULL
+UNION
+ SELECT nom.code_activite_hum,
+    nom.code_impact,
+    addi.id_zh,
+    loc.cd_nomenclature_coresp as loc
+   FROM zones_humides.zh
+   JOIN zones_humides.cor_champs_addi addi on addi.id_zh = zh.pk and addi.id_type_champ = (select pk from zones_humides.bib_champs bc where bc.nom_champ = 'pratique_loisirs')
+   join zones_humides.nomenclatures nom on nom.value = addi.label and nom.id_type_nomenclature = (select pk from zones_humides.bib_champs bc where bc.nom_champ = 'pratique_loisirs')
+    left join zones_humides.nomenclatures loc on loc.value = zh.localisation_pratique_loisirs
+   WHERE nom.code_activite_hum IS NOT NULL;
+
+-- Toutes activité humaines + impact décodées par ZH
+create or replace view zones_humides.cor_activite_humaines as 
+   SELECT 
+   nom.label as impact,
+   'pratique_gestion_eau' as type_acti,
+    addi.id_zh,
+    loc.label as loc
+   FROM zones_humides.zh
+     JOIN zones_humides.cor_champs_addi addi ON addi.id_zh = zh.pk AND addi.id_type_champ = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'pratique_gestion_eau'::text))
+     JOIN zones_humides.nomenclatures nom ON nom.value = addi.label::text AND nom.id_type_nomenclature = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'pratique_gestion_eau'::text))
+     left join zones_humides.nomenclatures loc on loc.value = zh.localisation_pratique_gestion_eau
+  WHERE nom.code_activite_hum IS NOT NULL
+UNION
+ select
+   nom.label as impact,
+   'pratique_agri_pasto' as type_acti,
+    addi.id_zh,
+    loc.label as loc
+   FROM zones_humides.zh
+     JOIN zones_humides.cor_champs_addi addi ON addi.id_zh = zh.pk AND addi.id_type_champ = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'pratique_agri_pasto'::text))
+     JOIN zones_humides.nomenclatures nom ON nom.value = addi.label::text AND nom.id_type_nomenclature = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'pratique_agri_pasto'::text))
+     left join zones_humides.nomenclatures loc on loc.value = zh.localisation_pratique_agri_pasto
+  WHERE nom.code_activite_hum IS NOT NULL
+UNION
+ SELECT 
+   nom.label as impact,
+   'pratique_travaux_foret' as type_acti,
+    addi.id_zh,
+    loc.label as loc
+   FROM zones_humides.zh
+     JOIN zones_humides.cor_champs_addi addi ON addi.id_zh = zh.pk AND addi.id_type_champ = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'pratique_travaux_foret'::text))
+     JOIN zones_humides.nomenclatures nom ON nom.value = addi.label::text AND nom.id_type_nomenclature = (( SELECT bc.pk
+           FROM zones_humides.bib_champs bc
+          WHERE bc.nom_champ::text = 'pratique_travaux_foret'::text))
+     left join zones_humides.nomenclatures loc on loc.value = zh.localisation_pratique_travaux_foret
+    WHERE nom.code_activite_hum IS NOT NULL
+UNION
+ SELECT 
+   nom.label as impact,
+   'pratique_loisirs' as type_acti,
+    addi.id_zh,
+    loc.label as loc
+   FROM zones_humides.zh
+   JOIN zones_humides.cor_champs_addi addi on addi.id_zh = zh.pk and addi.id_type_champ = (select pk from zones_humides.bib_champs bc where bc.nom_champ = 'pratique_loisirs')
+   join zones_humides.nomenclatures nom on nom.value = addi.label and nom.id_type_nomenclature = (select pk from zones_humides.bib_champs bc where bc.nom_champ = 'pratique_loisirs')
+    left join zones_humides.nomenclatures loc on loc.value = zh.localisation_pratique_loisirs
+   WHERE nom.code_activite_hum IS NOT NULL;
+
+
+
+  CREATE OR REPLACE VIEW zones_humides.export_regional
 AS WITH delim AS (
          SELECT array_agg(nom.cd_nomenclature_coresp) AS cd_nomenclature_delimitation,
             addi.id_zh
@@ -289,12 +367,53 @@ AS WITH delim AS (
              LEFT JOIN zones_humides.nomenclatures nom ON addi.label::text = nom.value
           WHERE bc.nom_champ::text = 'critere_delimitation'::text
           GROUP BY addi.id_zh
-        ), tmp AS (
-         SELECT json_build_object('cd_activite_humaine', cor_decod.code_activite_hum, 'localisation', cor_decod.loc, 'impact', array_agg(DISTINCT cor_decod.code_impact)) AS obj,
-            cor_decod.id_zh
-           FROM zones_humides.cor_activite_impact_zh_decoded cor_decod
-          GROUP BY cor_decod.id_zh, cor_decod.code_activite_hum, cor_decod.loc
-        ), habitat_corine AS (
+        ), 
+        -- dans le module ZH une activité humaine est associé à une seul loc. Dans notre cas on a associé plusieurs pratiques à une seule activité humaine
+        --on se retrouve donc à avoir avoir plusieurs localisations pour une activité humaine, on doit retrouver celle qui est le plus 
+        -- proche de la réalité car 
+        loc_agg as (
+          -- on aggrege dans un premier temps les localisation par couplet ZH / activité humaine
+          select cor.id_zh, array_agg(cor.loc) as locs, cor.code_activite_hum
+          from zones_humides.cor_activite_impact_zh_decoded cor
+          group by  cor.id_zh, cor.code_activite_hum
+          ) ,
+          -- on retrouve la bonne localisation
+          good_loc as (
+          select loc_agg.id_zh , loc_agg.code_activite_hum,
+          case 
+            when '1' = any(locs) and '2' = any(locs) then '3'
+            when '3' = any(locs) then '3'
+            when '2' = any(locs) then '2'
+            else '0'
+            end as loc_activite  
+          from loc_agg
+        ),
+        activite_humaine_standard AS(
+          select json_build_object(
+              'cd_activite_humaine', bis.code_activite_hum,  
+              'localisation', good_loc.loc_activite, 
+              'impact', array_agg(bis.code_impact)
+          ) as obj,
+          bis.id_zh
+          from zones_humides.cor_activite_impact_zh_decoded bis
+          join good_loc on good_loc.id_zh = bis.id_zh and good_loc.code_activite_hum = bis.code_activite_hum
+          group by bis.id_zh, good_loc.loc_activite, bis.code_activite_hum
+        ),
+        activite_humaine_standard_agg as (
+        -- activité humaine recollés aux standars ZH aggregé par ID ZH
+        select array_to_json(array_agg(s.obj)) as acti_impact,
+        	s.id_zh
+        	from activite_humaine_standard s
+        	group by s.id_zh
+        ),
+        all_impact AS (
+        -- toutes impacts tels qu'on les a saisi
+        SELECT  string_agg(DISTINCT cor_acti.impact, ' | ') as impacts,
+          cor_acti.id_zh
+        FROM zones_humides.cor_activite_humaines cor_acti
+        GROUP BY cor_acti.id_zh
+        ),
+         habitat_corine AS (
          SELECT z_1.pk,
             string_agg(cor_hab.value_dest::text, ', '::text) AS habitat_corine_biotope
            FROM zones_humides.zh z_1
@@ -310,25 +429,21 @@ AS WITH delim AS (
     nom_sdage.cd_nomenclature_coresp AS cd_typo_sdage,
     z.geom,
     z.observateur,
-    array_to_json(array_agg(tmp.obj)) AS acti_impact,
+    agg1.acti_impact,
     hab.habitat_corine_biotope,
     case 
     	when z.secteur in ('Oisans', 'Valbonnais') then '38'
     	else '05'
-    end as departement
-    
+    end as departement,
+    concat('Autres impacts : ', agg2.impacts) as remark_activity,
+    z.type_milieu as remark_pres
    FROM zones_humides.zh z
      LEFT JOIN zones_humides.nomenclatures nom_sdage ON z.typo_sdage = nom_sdage.value
      LEFT JOIN delim ON delim.id_zh = z.pk
-     LEFT JOIN tmp ON tmp.id_zh = z.pk
+     LEFT JOIN activite_humaine_standard_agg agg1 ON agg1.id_zh = z.pk
      LEFT JOIN habitat_corine hab ON hab.pk = z.pk
-  WHERE geom_overlap is FALSE and geom_valid is TRUE and geom_intersect_reg = FALSE and diffusion = true and valid_topology = true
-  GROUP BY z.pk, z.code_zh, z.action, z.date, z.nom_zh, delim.cd_nomenclature_delimitation, 
-  nom_sdage.cd_nomenclature_coresp, z.geom, z.observateur, hab.habitat_corine_biotope;
-  
-  
-  
-  
+     LEFT JOIN all_impact as agg2 on agg2.id_zh = z.pk
+  WHERE geom_overlap is FALSE and geom_valid is TRUE and geom_intersect_reg = FALSE and diffusion = true and valid_topology = true;
 
 
  -- AJOUT SEQUENCES
@@ -416,3 +531,16 @@ create trigger tri_insert_update_check_geom_val after insert or update
     of geom on
     zones_humides.zh for each row execute function zones_humides.check_validity();
 
+
+
+
+
+
+
+  select cor.id_zh, cor.loc, cor.type_acti, cor.impact
+  row_number() over(
+  partition by cor.id_zh
+  order by case cor.loc 
+  	when '0' then 0
+  )
+   from zones_humides.cor_activite_humaines cor

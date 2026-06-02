@@ -3,3 +3,5 @@ flatdict
 pyodk
 toml
 psycopg2
+qfieldcloud-sdk
+python-dotenv

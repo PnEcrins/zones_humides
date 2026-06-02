@@ -107,12 +107,15 @@ def main():
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
     token = args.token or os.environ.get("QFIELDCLOUD_TOKEN")
-    api_url = (
-        args.url
-        or os.environ.get("QFIELDCLOUD_URL")
-        or "https://app.qfield.cloud/api/v1/"
-    )
-    client = sdk.Client(url=api_url, token=token) if token else sdk.Client(url=api_url)
+    api_url = args.url or os.environ.get("QFIELDCLOUD_URL")
+    if token:
+        client = sdk.Client(url=api_url, token=token)
+    else:
+        client = sdk.Client(url=api_url)
+        client.login(
+            username=os.environ.get("QFIELDCLOUD_USER"),
+            password=os.environ.get("QFIELDCLOUD_USER_PASS"),
+        )
     try:
         project_id = resolve_project_id(client, args.project)
     except Exception as e:
@@ -170,7 +173,6 @@ def main():
             logging.info("Téléchargement terminé.")
     except Exception as e:
         logging.error("Erreur lors du téléchargement: %s", e)
-        sys.exit(1)
 
 
 if __name__ == "__main__":

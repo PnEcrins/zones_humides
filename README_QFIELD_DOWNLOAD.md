@@ -9,6 +9,9 @@ Prérequis
 pip install qfieldcloud-sdk
 ```
 
+Renseignez le fichier .env
+On peut utiliser soit un token soit un user/mdp pour la connexion. Actuellement la création des token est buggué sur qfieldcloud, on utilise donc le user/mdp
+
 Exemples
 
 Exporter et télécharger les fichiers JPG d'un projet:

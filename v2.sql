@@ -1,111 +1,18 @@
--- zones_humides.zh_qfield_test definition
-
--- Drop table
-
--- DROP TABLE zones_humides.zh_qfield_test;
-
-CREATE TABLE zones_humides.zh_qfield_test (
-	unique_uuid uuid DEFAULT uuid_generate_v4() NOT NULL,
-	geom public.geometry(polygon, 4326) NULL,
-	"date" date NULL,
-	heure_debut time NULL,
-	nom_zh text NULL,
-	id_role integer not NULL,
-	typo_sdage integer NULL,
-	type_milieu integer NULL,
-	pietinement integer NULL,
-	autre_procesus_visible_text integer NULL,
-	localisation_pratique_gestion_eau integer NULL,
-	localisation_pratique_agri_pasto integer NULL,
-	localisation_pratique_travaux_foret integer NULL,
-	localisation_pratique_loisirs integer NULL,
-	uuid_sub text NULL,
-	espece_envahissante integer NULL,
-	code_zh varchar(255) NULL,
-	secteur varchar(255) NULL,
-	"action" varchar(255) NULL,
-	geom_overlap bool DEFAULT false NULL,
-	geom_valid bool DEFAULT true NULL,
-	geom_intersect_reg bool DEFAULT true NULL,
-	diffusion bool DEFAULT true NULL,
-	comment_diffusion text NULL,
-	valid_topology bool DEFAULT false NULL,
-	CONSTRAINT zh_qfield_test_pkey PRIMARY KEY (unique_uuid)
-);
-
-ALTER TABLE zones_humides.zh_qfield_test
-    ADD CONSTRAINT fk_zh_typo_sdage 
-        FOREIGN KEY (typo_sdage) REFERENCES zones_humides.nomenclatures(id),
-    ADD CONSTRAINT fk_zh_type_milieu 
-        FOREIGN KEY (type_milieu) REFERENCES zones_humides.nomenclatures(id),
-    ADD CONSTRAINT fk_zh_pietinement 
-        FOREIGN KEY (pietinement) REFERENCES zones_humides.nomenclatures(id),
-    ADD CONSTRAINT fk_zh_autre_procesus 
-        FOREIGN KEY (autre_procesus_visible_text) REFERENCES zones_humides.nomenclatures(id),
-    ADD CONSTRAINT fk_zh_gestion_eau 
-        FOREIGN KEY (localisation_pratique_gestion_eau) REFERENCES zones_humides.nomenclatures(id),
-    ADD CONSTRAINT fk_zh_agri_pasto 
-        FOREIGN KEY (localisation_pratique_agri_pasto) REFERENCES zones_humides.nomenclatures(id),
-    ADD CONSTRAINT fk_zh_travaux_foret 
-        FOREIGN KEY (localisation_pratique_travaux_foret) REFERENCES zones_humides.nomenclatures(id),
-    ADD CONSTRAINT fk_zh_loisirs 
-        FOREIGN KEY (localisation_pratique_loisirs) REFERENCES zones_humides.nomenclatures(id);
-
-ALTER TABLE zones_humides.zh_qfield_test
-    ADD CONSTRAINT fk_zh_id_role 
-        FOREIGN KEY (id_role) REFERENCES utilisateurs.t_roles(id_role);
-
-ALTER TABLE zones_humides.zh_qfield_test
-    ADD CONSTRAINT fk_zh_espece_envahissante 
-        FOREIGN KEY (espece_envahissante) REFERENCES taxonomie.taxref(cd_nom);
-
-
-
--- CREATE view utilisateurs.t_roles
-
-
--- related_question = 'typo_sdage'
-
-
-CREATE OR REPLACE VIEW zones_humides.especes_indic_zh
-AS SELECT t.cd_nom,
-    concat(t.lb_nom, ' - ', t.nom_vern) AS concat
-   FROM taxonomie.taxref t
-     JOIN taxonomie.cor_nom_liste cor ON cor.cd_nom = t.cd_nom AND cor.id_liste = 1020;
-
-
-CREATE OR REPLACE VIEW zones_humides.taxref_list
-AS SELECT t.cd_nom,
-    concat(t.lb_nom, ' - ', t.nom_vern) AS concat
-   FROM taxonomie.taxref t
-     JOIN taxonomie.cor_nom_liste cor ON cor.cd_nom = t.cd_nom AND cor.id_liste = 1019;
-
-
-
-
-
-CASE 
-	WHEN array_contains(pratique_gestion_eau, 86) THEN localisation_pratique_gestion_eau IS NULL
-	ELSE localisation_pratique_gestion_eau IS NOT NULL
-	
-END
-
-
-
-CREATE TABLE zones_humides.zh_v2 (
+REATE TABLE zones_humides.zh_v2 (
 	old_pk integer,
 	unique_uuid uuid DEFAULT uuid_generate_v4() NOT NULL,
 	geom public.geometry(polygon, 4326) NULL,
 	critere_delimitation _int4 NULL,
 	espece_indicatrice _int4 NULL,
 	image_espece_indic text NULL,
-	presence_espece_nitro _int4 NULL,
 	"date" timestamp NOT NULL,
 	nom_zh text NULL,
 	id_role int4 NOT NULL,
 	typo_sdage int4 NULL,
 	type_milieu int4 NULL,
+	espece_nitro _int4 
 	pietinement int4 NULL,
+	source_pietinement _int4 NULL,
 	espece_indicatrice_pietinement _int4 NULL,
 	autre_procesus_visible _int4 NULL,
 	autre_procesus_visible_text text NULL,
@@ -132,8 +39,35 @@ CREATE TABLE zones_humides.zh_v2 (
 	CONSTRAINT zh_qfield_test_pkey PRIMARY KEY (unique_uuid)
 );
 
+-- zones_humides.listes_taxons source
 
-	insert into zones_humides.zh_v2 (
+CREATE OR REPLACE VIEW zones_humides.listes_taxons
+AS SELECT t.cd_nom,
+    concat(t.lb_nom, ' - ', t.nom_vern) AS search_name,
+    cor.id_liste
+   FROM taxonomie.taxref t
+     JOIN taxonomie.cor_nom_liste cor ON cor.cd_nom = t.cd_nom AND (cor.id_liste = ANY (ARRAY[1020, 1021, 1022]))
+  ORDER BY (concat(t.lb_nom, ' - ', t.nom_vern));
+
+
+create table zones_humides.bib_champs(
+  pk serial primary key,
+  nom_champ character varying(255)
+);
+
+ -- AJOUT SEQUENCES
+
+ -- sequence PACA
+ CREATE SEQUENCE zones_humides.code_zh_paca START 1;
+
+ -- sequence Valbo
+
+ CREATE SEQUENCE zones_humides.code_zh_valbo START 1;
+
+ -- sequence Oisans
+ CREATE SEQUENCE zones_humides.code_zh_oisans START 1;
+
+insert into zones_humides.zh_v2 (
 	    old_pk,
 		unique_uuid,
 		geom,
@@ -146,6 +80,7 @@ CREATE TABLE zones_humides.zh_v2 (
 		typo_sdage,
 		type_milieu,
 		pietinement,
+		source_pietinement,
 		espece_indicatrice_pietinement,
 		autre_procesus_visible,
 		autre_procesus_visible_text,
@@ -183,6 +118,7 @@ CREATE TABLE zones_humides.zh_v2 (
 		typo_sdage.id,
 		type_milieu.id,
 		pieti.id,
+		source_pieti.id_array,
 		cepz.cd_nom_array,
 		autre_proc.id_array,
 		z.autre_procesus_visible_text,
@@ -194,7 +130,7 @@ CREATE TABLE zones_humides.zh_v2 (
 		loc_trav.id,
 		loisir.id_array,
 		loc_lois.id,
-		'TODO_IMAGE',
+    	concat(replace(z.nom_zh, ' '::text, '_'::text), '_', z.uuid_sub, '.jpg') AS url_image,
 		z.uuid_sub,
 		z.espece_envahissante,
 		code_zh,
@@ -240,6 +176,13 @@ CREATE TABLE zones_humides.zh_v2 (
 		where cca.id_type_champ = 3
 		group by cca.id_zh
 	) autre_proc on autre_proc.id_zh = z.pk
+	left join (
+		select cca.id_zh, array_agg(DISTINCT n.id) as id_array
+		from zones_humides.cor_champs_addi cca
+		join zones_humides.nomenclatures n on n.value = cca."label" and n.id_type_nomenclature = cca.id_type_champ
+		where cca.id_type_champ = 2
+		group by cca.id_zh
+	) source_pieti on source_pieti.id_zh = z.pk
 	left join (
 		select cca.id_zh, array_agg(DISTINCT n.id) as id_array
 		from zones_humides.cor_champs_addi cca
@@ -321,7 +264,7 @@ SELECT
 	 FROM unnest(z.espece_indicatrice_pietinement) AS cd3(cd_nom)
 	 JOIN taxonomie.taxref t ON t.cd_nom = cd3.cd_nom) AS espece_pieti,
 	tx_env.lb_nom AS espece_envahissante,
-	concat('https://geonature.ecrins-parcnational.fr/api/media/zh/', replace(z.nom_zh, ' '::text, '_'::text), '_', z.uuid_sub, '.jpg') AS url_image
+	concat('https://geonature.ecrins-parcnational.fr/api/media/zh/files/', z.image_zh ) AS url_image
 FROM zones_humides.zh_v2 z
 LEFT JOIN zones_humides.nomenclatures loc_gest
 	ON loc_gest.id = z.localisation_pratique_gestion_eau
@@ -336,3 +279,82 @@ LEFT JOIN zones_humides.nomenclatures loc_lois
 	ON loc_lois.id = z.localisation_pratique_loisirs
 	AND loc_lois.related_question = 'localisation_pratique'
 LEFT JOIN taxonomie.taxref tx_env ON tx_env.cd_nom = z.espece_envahissante;
+
+
+/*
+Trigger function to set `code_zh` on insert based on the containing area (secteur).
+*/
+CREATE OR REPLACE FUNCTION zones_humides.set_code_zh_on_insert()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+	secteur text;
+	next_sequence_val bigint;
+	prefix text;
+	id_type_area_secteurs integer := 30; -- adjust if your config differs 
+BEGIN
+	-- if code_zh already provided, keep it
+	IF NEW.code_zh IS NOT NULL THEN
+		RETURN NEW;
+	END IF;
+
+	SELECT l.area_name
+	INTO secteur
+	FROM ref_geo.l_areas l
+	WHERE ST_Intersects(NEW.geom, l.geom_4326)
+	  AND l.id_type = id_type_area_secteurs
+	LIMIT 1;
+
+	IF secteur IS NULL THEN
+		RETURN NEW;
+	END IF;
+
+	IF secteur IN ('Champsaur', 'Vallouise', 'Valgaudemar', 'Briançonnais', 'Embrunais') THEN
+		next_sequence_val := nextval('zones_humides.code_zh_paca');
+		IF next_sequence_val >= 100 THEN
+			prefix := '0';
+		ELSE
+			prefix := '00';
+		END IF;
+		NEW.code_zh := format('05PNE%s%s', prefix, next_sequence_val);
+
+	ELSIF secteur = 'Valbonnais' THEN
+		next_sequence_val := nextval('zones_humides.code_zh_valbo');
+		IF next_sequence_val > 100 THEN
+			prefix := '0';
+		ELSE
+			prefix := '00';
+		END IF;
+		NEW.code_zh := format('38VA%s%s', prefix, next_sequence_val);
+
+	ELSIF secteur = 'Oisans' THEN
+		next_sequence_val := nextval('zones_humides.code_zh_oisans');
+		IF next_sequence_val >= 100 THEN
+			prefix := '0';
+		ELSE
+			prefix := '00';
+		END IF;
+		NEW.code_zh := format('38RD%s%s', prefix, next_sequence_val);
+	END IF;
+
+	RETURN NEW;
+END;
+$$;
+
+-- Trigger: set code_zh before insert on zh_v2
+DROP TRIGGER IF EXISTS set_code_zh_before_insert ON zones_humides.zh_v2;
+CREATE TRIGGER set_code_zh_before_insert
+BEFORE INSERT ON zones_humides.zh_v2
+FOR EACH ROW
+EXECUTE FUNCTION zones_humides.set_code_zh_on_insert();
+
+
+
+
+--select currval('zones_humides.code_zh_paca');
+--1948
+-- select last_value from zones_humides.code_zh_valbo;
+--252
+--select last_value from zones_humides.code_zh_oisans;
+--286

@@ -220,7 +220,7 @@ insert into zones_humides.zh_v2 (
 
 
 
-CREATE OR REPLACE VIEW zones_humides.export_zh_v2 AS
+CREATE OR REPLACE VIEW zones_humides.export_zh AS
 SELECT
 	z.old_pk AS pk,
 	z.unique_uuid,

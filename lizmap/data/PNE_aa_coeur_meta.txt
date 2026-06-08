@@ -1,0 +1,2 @@
+﻿Limite du territoire du Parc national des Ecrins suite à l'adhésion des communes en 2013
+couche générée par fusion des deux couches : PNE_coeur + PNE_aa

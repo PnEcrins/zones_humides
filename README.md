@@ -13,6 +13,6 @@ Une projet QGIS permet de modifier les géométries pour corriger les erreurs de
 
 ### v2
 
-Les données sont maintenant saisies dans un projet qfield/qfieldcloud et automatiquement synchronisé avec la base PG (table zones_humides.zh_v2).
-Un projet lizmap est toujours en place pour que tout le monde puisse consulter les données. Ce projet lizmap s'appuye sur un fichier geojson généré par l'export de GeoNature.
-Les images des zones humides sont rappatrié sur le serveur GeoNature via le script `download_qfieldcloud_attachments.py`. Elles sont mise dans un fichier servie via la conf Apache de GeoNature pour être affiché dans Lizmap.
+Les données sont maintenant saisies dans un projet qfield/qfieldcloud et automatiquement synchronisées avec la base PG (table zones_humides.zh_v2).
+Un projet lizmap est toujours en place pour que tout le monde puisse consulter les données. Ce projet lizmap s'appuye sur un fichier geojson généré par un export de GeoNature au format geojson.
+Les images des zones humides sont rappatriés sur le serveur GeoNature via le script `download_qfieldcloud_attachments.py`. Elles sont mises dans un dossier qui est servis via la conf Apache de GeoNature pour être affiché dans Lizmap.

@@ -41,14 +41,13 @@ REATE TABLE zones_humides.zh_v2 (
 
 -- zones_humides.listes_taxons source
 
-CREATE OR REPLACE VIEW zones_humides.listes_taxons
-AS SELECT t.cd_nom,
-    concat(t.lb_nom, ' - ', t.nom_vern) AS search_name,
-    cor.id_liste
-   FROM taxonomie.taxref t
-     JOIN taxonomie.cor_nom_liste cor ON cor.cd_nom = t.cd_nom AND (cor.id_liste = ANY (ARRAY[1020, 1021, 1022]))
-  ORDER BY (concat(t.lb_nom, ' - ', t.nom_vern));
-
+CREATE OR REPLACE VIEW zones_humides.listes_taxons AS
+SELECT t.cd_nom,
+			 concat(t.lb_nom, ' - ', t.nom_vern) AS search_name,
+			 cor.id_liste
+FROM taxonomie.taxref t
+JOIN taxonomie.cor_nom_liste cor ON cor.cd_nom = t.cd_nom
+WHERE cor.id_liste = ANY (ARRAY[1020, 1021, 1022]);
 
 create table zones_humides.bib_champs(
   pk serial primary key,

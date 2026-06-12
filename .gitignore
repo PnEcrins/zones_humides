@@ -10,3 +10,7 @@ centralpy.log
 qfield/zh2/files/*
 **/.qfieldsync/*
 lizmap/data/MH_probS_sup_50_PatriNat_vectorise.gpkg
+qfield/zh2/ortho.mbtiles
+qfield/zh2/scan.mbtiles
+qfield/scan.mbtiles
+qfield/ortho.mbtiles
